@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/OpenCV+Unity/Demo/Document_Scanner/DocumentScannerScene.unity
     guid: c273656cfabeda743b708f09ee7be34f
+  - enabled: 1
+    path: Assets/Scenes/OCR.unity
+    guid: dee8fe7515483ab40a289d58deb454e7
   m_configObjects: {}
