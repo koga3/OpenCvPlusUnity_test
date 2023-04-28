@@ -17,6 +17,10 @@ namespace Kew
 {
     public class OCROpenCVUtil
     {
+        // test        
+        private List<Image> imageObjList;
+        private Mat tempMat = new Mat();
+
         //-----------------------------------------------------------------------------------------------------------------------------------
         // 画像処理
         // 足、マルを判定する範囲
@@ -43,13 +47,20 @@ namespace Kew
             objectMats.CopyTo(this.objectMats);
         }
 
+        // test
+        public OCROpenCVUtil(List<Mat> objectMats, List<Image> imageObjs)
+        {
+            objectMats.CopyTo(this.objectMats);
+            imageObjList = imageObjs;
+        }
+
         // 歩数確認画面かどうか判定して画面のMatを返す(歩数確認画面ではなければnull)
-        public async UniTask<List<Mat>> GetWalkCountDisplay(Mat src, CancellationToken token)
+        public async UniTask<Mat> GetWalkCountDisplay(Mat src, CancellationToken token)
         {
             SynchronizationContext context = SynchronizationContext.Current;
             // Debug.Log(context);
 
-            List<Mat> retval = new List<Mat>();
+            Mat retval = null;
             // 実装用
             await UniTask.RunOnThreadPool(() =>
             {
@@ -67,7 +78,8 @@ namespace Kew
                         .All(x => x.area.Contains(points[x.i]))
                         )
                     {
-                        retval.Add(image);
+                        // retval.Add(image);
+                        retval = image;
                     }
                 }
             }, cancellationToken: token);
@@ -181,8 +193,10 @@ namespace Kew
         // 画像から矩形の部分を検出、トリミング
         private IEnumerable<Mat> GetRectangles(Mat image)
         {
-            using (Mat working = Threshold(image.Clone()))
+            using (Mat working = Threshold2(image.Clone()))
             {
+                //test
+                working.CopyTo(tempMat);
 
                 Point[][] contourPoints;
                 HierarchyIndex[] i;
@@ -481,16 +495,16 @@ namespace Kew
             {
                 await UniTask.SwitchToThreadPool();
                 // 画像から歩数確認画面を抜き出す
-                var matList = await GetWalkCountDisplay(srcImage, token);
-                Debug.Log(matList.Count());
+                var mat = await GetWalkCountDisplay(srcImage, token);
+                // Debug.Log(matList.Count());
 
-                if (matList.Count() <= 0)
+                if (mat == null)
                 {
                     return retval;
                 }
 
                 // 歩数確認画面から数字部分を抜き出す
-                numbers = (await ClipNumber(matList[0], token)).ToList();
+                numbers = (await ClipNumber(mat, token)).ToList();
             }
 
             return numbers;
@@ -812,6 +826,22 @@ namespace Kew
 
         //     Assert.Equal(3, detectedClass);
         // }
+
+        // test
+        public void CallAtMainThred()
+        {
+            DisplayMat(tempMat);
+        }
+
+        private void DisplayMat(Mat src)
+        {
+            Texture2D tex = OpenCvSharp.Unity.MatToTexture(src);
+            
+            var target = imageObjList.First();
+            target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 240*tex.height/tex.width);
+            target.gameObject.SetActive(true);
+        }
 
     }
 

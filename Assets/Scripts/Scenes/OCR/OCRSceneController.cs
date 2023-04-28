@@ -17,6 +17,10 @@ namespace Kew
 {
     public class OCRSceneController : MonoBehaviour
     {
+        //test
+        [SerializeField]
+        private List<Image> testImageObjList;
+
         [SerializeField]
         private Button shutterBtn;
         [SerializeField]
@@ -57,7 +61,7 @@ namespace Kew
 
         private ReactiveProperty<bool> isShuttered = new ReactiveProperty<bool>(false);
 
-        private ReactiveProperty<List<Mat>> matList = new ReactiveProperty<List<Mat>>();
+        private ReactiveProperty<List<Mat>> matList = new ReactiveProperty<List<Mat>>(new List<Mat>());
         private ReactiveProperty<List<Tuple<Mat, string>>> numbers = new ReactiveProperty<List<Tuple<Mat, string>>>();
         private ReactiveProperty<List<Tuple<Texture2D, string>>> numbersTexture = new ReactiveProperty<List<Tuple<Texture2D, string>>>();
 
@@ -101,7 +105,9 @@ namespace Kew
                 }
             });
 
-            util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList());
+            // util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList());
+            // test
+            util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList(), testImageObjList);
 
             shutterBtn.AddCallbackWithTarget(() => Shatter(), this);
             saveBtn.AddCallbackWithTarget(() => SaveNumbers(this.GetCancellationTokenOnDestroy()).Forget(), this);
@@ -202,13 +208,20 @@ namespace Kew
                     {
                         webCamMat.CopyTo(copy);
                         var tex = OpenCvSharp.Unity.MatToTexture(util.Threshold(copy));
-                        Debug.Log(tex);
+                        // Debug.Log(tex);
                         testImg.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, 480, 480), new Vector2(0.5f, 0.5f));
                         await using (UniTask.ReturnToMainThread(token))
                         {
                             await UniTask.SwitchToThreadPool();
                             // 画像から歩数確認画面を抜き出す
-                            matList.Value = await util.GetWalkCountDisplay(webCamMat, token);
+                            List<Mat> list = new List<Mat>(); 
+                            var result = await util.GetWalkCountDisplay(webCamMat, token);
+                            if(result != null)
+                            {
+                                list.Add(result);
+                            }
+                            matList.Value = list;
+                            
                             // 歩数確認画面から数字部分を抜き出す
                             if (matList.Value.Count() > 0)
                             {
@@ -216,6 +229,8 @@ namespace Kew
                                 numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
                             }
                         }
+
+                        util.CallAtMainThred();
                     }
                 }
             }
