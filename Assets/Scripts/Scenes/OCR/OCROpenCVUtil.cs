@@ -51,6 +51,12 @@ namespace Kew
         public OCROpenCVUtil(List<Mat> objectMats, List<Image> imageObjs)
         {
             objectMats.CopyTo(this.objectMats);
+            int i = 0;
+            foreach (var mat in this.objectMats)
+            {
+                this.objectMats[i] = Threshold2(mat);
+                i++;
+            }
             imageObjList = imageObjs;
         }
 
@@ -67,9 +73,11 @@ namespace Kew
                 // 矩形の画像を抽出(カラー)
                 var matList = GetRectangles(src);
 
+                int i = 0;
                 foreach (var image in matList)
                 {
                     // binarizeList = GetObjects(image, 700).ToList();
+                    matList.ToList()[i] = Threshold2(image);
                     var points = GetPointByTemplateMatching(image, objectMats).ToList();
                     // Debug.Log($"Left Foot : {points[0]} {judgeAreas[0].Contains(points[0])}, Right Foot : {points[1]} {judgeAreas[1].Contains(points[1])}, Circle : {points[2]} {judgeAreas[2].Contains(points[2])}");
 
@@ -81,6 +89,7 @@ namespace Kew
                         // retval.Add(image);
                         retval = image;
                     }
+                    i++;
                 }
             }, cancellationToken: token);
 
@@ -142,11 +151,12 @@ namespace Kew
         {
             List<Mat> retval = new List<Mat>();
 
-            await UniTask.Run(() =>
+            await using (UniTask.ReturnToMainThread(token))
             {
+                await UniTask.SwitchToThreadPool();
                 foreach (var srcMat in src)
                 {
-                    var adding = Threshold2(srcMat);
+                    var adding = (srcMat);
                     var scale = adding.Height > adding.Width ? (double)numberHeight / adding.Height : (double)numberWidth / adding.Width;
                     if (adding.Size().Height * scale <= 1 || adding.Size().Width * scale <= 1)
                     {
@@ -157,7 +167,7 @@ namespace Kew
                     adding = Overlay(adding, new Size(numberWidth, numberHeight));
                     retval.Add(adding);
                 }
-            }, cancellationToken: token);
+            };
 
             return retval;
         }
@@ -239,7 +249,7 @@ namespace Kew
 
         private IEnumerable<Tuple<Mat, Point>> GetObjects(Mat image, double minSize, double maxSize)
         {
-            using (Mat working = Threshold2(image.Clone()))
+            using (Mat working = (image.Clone()))
             {
 
                 Point[][] contourPoints;
@@ -275,12 +285,13 @@ namespace Kew
 
             using (Mat tmp = new Mat())
             {
-                Cv2.CvtColor(src, tmp, ColorConversionCodes.BGRA2BGR);
+                // Cv2.CvtColor(src, tmp, ColorConversionCodes.BGRA2BGR);
 
                 foreach (var template in templates)
                 {
                     Mat result = new Mat();
-                    Cv2.MatchTemplate(tmp, template, result, TemplateMatchModes.CCoeff);
+                    // Debug.Log($"tmp={tmp.Size()}, template={templ}")
+                    Cv2.MatchTemplate(src, template, result, TemplateMatchModes.CCoeff);
                     double minval, maxVal;
                     Point minloc, maxLoc;
 
@@ -417,8 +428,9 @@ namespace Kew
         private async UniTask<Mat> CreateSaveData(Mat input, int label, int numbersCnt, CancellationToken token, Mat formerSaveData = null)
         {
             var output = new Mat();
-            await UniTask.Run(() =>
+            await using (UniTask.ReturnToMainThread(token))
             {
+                await UniTask.SwitchToThreadPool();
                 int width = maxColumn * numberWidth, height = maxRaw * numberHeight;
                 // Color32[] numImgPixels = tex2d.GetPixels32();
                 // input.CopyTo(output);
@@ -436,7 +448,7 @@ namespace Kew
                     output = Overlay(input, formerSaveData, new Point(x, y));
                 }
 
-            }, cancellationToken: token);
+            };
 
             return output;
         }
@@ -836,10 +848,10 @@ namespace Kew
         private void DisplayMat(Mat src)
         {
             Texture2D tex = OpenCvSharp.Unity.MatToTexture(src);
-            
+
             var target = imageObjList.First();
             target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 240*tex.height/tex.width);
+            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 240 * tex.height / tex.width);
             target.gameObject.SetActive(true);
         }
 

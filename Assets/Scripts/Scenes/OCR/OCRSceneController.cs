@@ -75,7 +75,7 @@ namespace Kew
         {
 #if UNITY_EDITOR
             objRawImage.transform.Rotate(new Vector3(0, 0, 90));
-#else
+#elif !DEBUG
             objRawImage.transform.Rotate(new Vector3(0, 0, 90));
 #endif
             try
@@ -214,14 +214,14 @@ namespace Kew
                         {
                             await UniTask.SwitchToThreadPool();
                             // 画像から歩数確認画面を抜き出す
-                            List<Mat> list = new List<Mat>(); 
+                            List<Mat> list = new List<Mat>();
                             var result = await util.GetWalkCountDisplay(webCamMat, token);
-                            if(result != null)
+                            if (result != null)
                             {
                                 list.Add(result);
                             }
                             matList.Value = list;
-                            
+
                             // 歩数確認画面から数字部分を抜き出す
                             if (matList.Value.Count() > 0)
                             {
