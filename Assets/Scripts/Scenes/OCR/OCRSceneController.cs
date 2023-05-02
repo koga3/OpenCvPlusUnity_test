@@ -37,7 +37,7 @@ namespace Kew
         [SerializeField]
         private List<GameObject> numberObjList;
         [SerializeField]
-        private List<Texture2D> objectTextures = new List<Texture2D>(3);
+        private List<Texture2D> objectTextures;
 
         [SerializeField]
         private GameObject walkCntPopup;

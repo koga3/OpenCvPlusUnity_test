@@ -25,9 +25,13 @@ namespace Kew
         // 画像処理
         // 足、マルを判定する範囲
         List<OpenCvSharp.Rect> judgeAreas = new List<OpenCvSharp.Rect>
+            // {
+            //     new OpenCvSharp.Rect(100, 60, 50, 50),
+            //     new OpenCvSharp.Rect(145, 60, 50, 50),
+            //     new OpenCvSharp.Rect(125, 245, 50, 50)
+            // };            
             {
-                new OpenCvSharp.Rect(100, 60, 50, 50),
-                new OpenCvSharp.Rect(145, 60, 50, 50),
+                new OpenCvSharp.Rect(123, 60, 50, 50),
                 new OpenCvSharp.Rect(125, 245, 50, 50)
             };
 
@@ -37,10 +41,14 @@ namespace Kew
         // 画面の縦横size
         private readonly OpenCvSharp.Size displaySize = new OpenCvSharp.Size(300, 312);
         // 画面を検出する際の最小サイズ
-        private readonly double minRectSize = 40000.0;
+#if UNITY_EDITOR
+        private readonly double minRectSize = 5000.0;
+#else
+        private readonly double minRectSize = 20000.0;
+#endif
         public double MinRectSize => minRectSize;
 
-        private Mat[] objectMats = new Mat[3];
+        private Mat[] objectMats = new Mat[2];
 
         public OCROpenCVUtil(List<Mat> objectMats)
         {
@@ -73,21 +81,25 @@ namespace Kew
                 // 矩形の画像を抽出(カラー)
                 var matList = GetRectangles(src);
 
-                int i = 0;
+                int i = 0, maxCount = 0;
+                retval = matList.Count() > 0 ? matList.ToList()[0] : null; // testように矩形があったらとりあえず通す
                 foreach (var image in matList)
                 {
-                    // binarizeList = GetObjects(image, 700).ToList();
                     matList.ToList()[i] = Threshold2(image);
                     var points = GetPointByTemplateMatching(image, objectMats).ToList();
                     // Debug.Log($"Left Foot : {points[0]} {judgeAreas[0].Contains(points[0])}, Right Foot : {points[1]} {judgeAreas[1].Contains(points[1])}, Circle : {points[2]} {judgeAreas[2].Contains(points[2])}");
 
-                    if (judgeAreas
+                    var matchCnt = judgeAreas
                         .Select((x, i) => new { area = x, i = i })
-                        .All(x => x.area.Contains(points[x.i]))
-                        )
+                        .Count(x => x.area.Contains(points[x.i]));
+
+                    // if (matchCnt >= 2)
                     {
-                        // retval.Add(image);
-                        retval = image;
+                        if (matchCnt > maxCount)
+                        {
+                            maxCount = matchCnt;
+                            retval = image;
+                        }
                     }
                     i++;
                 }
@@ -106,43 +118,44 @@ namespace Kew
             // {
             // オブジェクト検出
             var list = GetObjects(src, 100, 500);
-            var tmp = list
+            // var tmp = list
+            retval = list
                 .Where(x => x.Item2.X < 170 && (175 < x.Item2.Y && x.Item2.Y < 215)) // 位置で数字を抜き出す
                 .OrderBy(x => x.Item2.X)                                            // x座標で並び替え
-                ;
-
-            if (tmp.Count() > 0) Debug.Log(tmp.Select(x => x.Item2.ToString()).Aggregate((x, y) => x + y));
-
-            retval = tmp
-                .Where((x, i) =>
-                {
-                    return i < tmp.Select((y, j) => (y, j))
-                            .Where(y =>
-                            {
-                                // Debug.Log(y.y.Item2.X.ToString() + list.ToList()[y.j - 1].Item2.X.ToString());
-                                return y.j == 0 ? false : y.y.Item2.X - tmp.ToList()[y.j - 1].Item2.X > 30;
-                            })
-                            .Select(y => y.j)
-                            .DefaultIfEmpty(100)
-                            .First();
-
-                })                                                                  // 空白で分割した左側のみを取得
                 .Select(x => new Tuple<Mat, string>(x.Item1, x.Item2.ToString()));  // 座標情報追加(debug用)
+
+            // if (tmp.Count() > 0) Debug.Log(tmp.Select(x => x.Item2.ToString()).Aggregate((x, y) => x + y));
+
+            // retval = tmp
+            //     .Where((x, i) =>
+            //     {
+            //         return i < tmp.Select((y, j) => (y, j))
+            //                 .Where(y =>
+            //                 {
+            //                     // Debug.Log(y.y.Item2.X.ToString() + list.ToList()[y.j - 1].Item2.X.ToString());
+            //                     return y.j == 0 ? false : y.y.Item2.X - tmp.ToList()[y.j - 1].Item2.X > 30;
+            //                 })
+            //                 .Select(y => y.j)
+            //                 .DefaultIfEmpty(100)
+            //                 .First();
+
+            //     })                                                                  // 空白で分割した左側のみを取得
+            //     .Select(x => new Tuple<Mat, string>(x.Item1, x.Item2.ToString()));  // 座標情報追加(debug用)
             // }, cancellationToken: token);
-            if (retval.Count() > 0) Debug.Log(retval.Select(x => x.Item2.ToString()).Aggregate((x, y) => x + y));
+            // if (retval.Count() > 0) Debug.Log(retval.Select(x => x.Item2.ToString()).Aggregate((x, y) => x + y));
 
             var resized = await ResizeNumbers(retval.Select(x => x.Item1), token);
             retval = resized.Count() == retval.Count() ? retval.Select((x, i) => new Tuple<Mat, string>(resized.ToList()[i], x.Item2)) : new List<Tuple<Mat, string>>();
 
-            if (tmp.Count() > 0) Debug.Log("t e :" + tmp.Select((y, j) => (y, j))
-                            .Where(y =>
-                            {
-                                // Debug.Log(y.y.Item2.X.ToString() + list.ToList()[y.j - 1].Item2.X.ToString());
-                                return y.j == 0 ? false : y.y.Item2.X - tmp.ToList()[y.j - 1].Item2.X > 30;
-                            })
-                            .Select(y => y.y.Item2)
-                            .DefaultIfEmpty()
-                            .First());
+            // if (tmp.Count() > 0) Debug.Log("t e :" + tmp.Select((y, j) => (y, j))
+            //                 .Where(y =>
+            //                 {
+            //                     // Debug.Log(y.y.Item2.X.ToString() + list.ToList()[y.j - 1].Item2.X.ToString());
+            //                     return y.j == 0 ? false : y.y.Item2.X - tmp.ToList()[y.j - 1].Item2.X > 30;
+            //                 })
+            //                 .Select(y => y.y.Item2)
+            //                 .DefaultIfEmpty()
+            //                 .First());
             return retval;
         }
 
@@ -203,7 +216,7 @@ namespace Kew
         // 画像から矩形の部分を検出、トリミング
         private IEnumerable<Mat> GetRectangles(Mat image)
         {
-            using (Mat working = Threshold2(image.Clone()))
+            using (Mat working = Threshold(image.Clone()))
             {
                 //test
                 working.CopyTo(tempMat);
@@ -229,10 +242,19 @@ namespace Kew
                             // triming
                             var rect = Cv2.MinAreaRect(points);
                             float angle = rect.Angle;
+                            Debug.Log("Angle: " + rect.Angle);
+                            // テスト用タブレットでやったら、角度がずれていた
+#if UNITY_EDITOR
                             if (rect.Angle < -45)
                             {
                                 angle += 90;
                             }
+#else
+                            if (rect.Angle > 45)
+                            {
+                                angle -= 90;
+                            }
+#endif
                             var m = Cv2.GetRotationMatrix2D(rect.Center, angle, 1.0);
                             Cv2.WarpAffine(image, rotated, m, image.Size(), InterpolationFlags.Cubic);
                             Cv2.GetRectSubPix(rotated, new Size(rect.Size.Width, rect.Size.Height), rect.Center, adding);
@@ -242,6 +264,7 @@ namespace Kew
                         rects.Add(adding.Clone());
                     }
                 }
+                // Debug.Log(rects.Aggregate(x => x.angle))
                 return rects;
             }
         }
@@ -303,7 +326,7 @@ namespace Kew
                     if (maxVal > 7000000)
                     {
                         points.Add(center);
-                        Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(i == 0 ? 255 : 0, i == 1 ? 255 : 0, i == 2 ? 255 : 0), 2);
+                        Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(0, 0, 0), 2);
                     }
                     else
                     {
