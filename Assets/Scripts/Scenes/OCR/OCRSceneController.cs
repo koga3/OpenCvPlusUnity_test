@@ -197,10 +197,13 @@ namespace Kew
                     await UniTask.Yield(PlayerLoopTiming.Update, token);
                 }
 
-                // while (!this.webCamTex.isPlaying)
-                // {
-                //     await UniTask.Yield(PlayerLoopTiming.Update, token);
-                // }
+                // 判定動作を10フレームに1回にする
+                int i = 0;
+                while (i < 10)
+                {
+                    i++;
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                }
 
                 using (var webCamMat = OpenCvSharp.Unity.TextureToMat(this.webCamTex))
                 {
