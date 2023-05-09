@@ -126,7 +126,7 @@ namespace Kew
             // opening
             var kernel = Mat.Ones(5, 3, MatType.CV_8UC1);
             // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel, iterations: 2);
+            Cv2.Erode(src, src, kernel, iterations: 3);
             Cv2.Dilate(src, src, kernel, iterations: 1);
             DisplayMat(src, 3);
 
@@ -252,7 +252,7 @@ namespace Kew
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             Cv2.MedianBlur(image, image, 7);
             DisplayMat(image, 1);
-            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 1.1);
+            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 1.05);
             return image;
         }
 
