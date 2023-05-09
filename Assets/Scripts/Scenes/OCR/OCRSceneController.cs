@@ -210,9 +210,10 @@ namespace Kew
                     using (Mat copy = new Mat())
                     {
                         webCamMat.CopyTo(copy);
-                        var tex = OpenCvSharp.Unity.MatToTexture(util.Threshold(copy));
+                        // util.MakeSharp(copy, copy);
+                        // util.DisplayMat(copy, 1);
+                        // util.DisplayMat(webCamMat, 0);
                         // Debug.Log(tex);
-                        testImg.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, 480, 480), new Vector2(0.5f, 0.5f));
                         await using (UniTask.ReturnToMainThread(token))
                         {
                             await UniTask.SwitchToThreadPool();
@@ -229,7 +230,8 @@ namespace Kew
                             if (matList.Value.Count() > 0)
                             {
                                 Debug.Log("display: " + matList.Value[0].Type());
-                                numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
+                                // numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
+                                util.ShowClipedNumRect(matList.Value[0]);
                             }
                         }
 

@@ -44,7 +44,7 @@ namespace Kew
 #if UNITY_EDITOR
         private readonly double minRectSize = 5000.0;
 #else
-        private readonly double minRectSize = 20000.0;
+        private readonly double minRectSize = 15000.0;
 #endif
         public double MinRectSize => minRectSize;
 
@@ -78,34 +78,73 @@ namespace Kew
             // 実装用
             await UniTask.RunOnThreadPool(() =>
             {
+                // シャープ化
+                // MakeSharp(src, src);
+
                 // 矩形の画像を抽出(カラー)
                 var matList = GetRectangles(src);
 
                 int i = 0, maxCount = 0;
-                retval = matList.Count() > 0 ? matList.ToList()[0] : null; // testように矩形があったらとりあえず通す
+                // retval = matList.Count() > 0 ? matList.ToList()[0] : null; // testように矩形があったらとりあえず通す
                 foreach (var image in matList)
                 {
-                    matList.ToList()[i] = Threshold2(image);
-                    var points = GetPointByTemplateMatching(image, objectMats).ToList();
-                    // Debug.Log($"Left Foot : {points[0]} {judgeAreas[0].Contains(points[0])}, Right Foot : {points[1]} {judgeAreas[1].Contains(points[1])}, Circle : {points[2]} {judgeAreas[2].Contains(points[2])}");
-
-                    var matchCnt = judgeAreas
-                        .Select((x, i) => new { area = x, i = i })
-                        .Count(x => x.area.Contains(points[x.i]));
-
-                    // if (matchCnt >= 2)
+                    using (Mat temp = new Mat())
                     {
-                        if (matchCnt > maxCount)
+                        image.CopyTo(temp);
+                        matList.ToList()[i] = Threshold2(temp);
+                        var points = GetPointByTemplateMatching(temp, objectMats).ToList();
+                        // Debug.Log($"Left Foot : {points[0]} {judgeAreas[0].Contains(points[0])}, Right Foot : {points[1]} {judgeAreas[1].Contains(points[1])}, Circle : {points[2]} {judgeAreas[2].Contains(points[2])}");
+
+                        var matchCnt = judgeAreas
+                            .Select((x, i) => new { area = x, i = i })
+                            .Count(x => x.area.Contains(points[x.i]));
+
+                        // if (matchCnt >= 2)
                         {
-                            maxCount = matchCnt;
-                            retval = image;
+                            if (matchCnt > maxCount)
+                            {
+                                maxCount = matchCnt;
+                                retval = image.GetRectSubPix(new Size(100, 35), new Point2f(image.Width * 0.5f - 70, image.Height * 0.5f + 43));
+                                Cv2.Resize(retval, retval, new Size(), 4, 4);
+                            }
                         }
+                        i++;
                     }
-                    i++;
                 }
             }, cancellationToken: token);
 
             return retval;
+        }
+
+        //test 区切れるかどうか
+        public void ShowClipedNumRect(Mat src)
+        {
+            MakeSharp(src, src);
+            DisplayMat(src, 0);
+            Threshold3(src);
+            DisplayMat(src, 2);
+            // opening
+            var kernel = Mat.Ones(5, 3, MatType.CV_8UC1);
+            // DisplayMat(src, 2);
+            Cv2.Erode(src, src, kernel, iterations: 2);
+            Cv2.Dilate(src, src, kernel, iterations: 1);
+            DisplayMat(src, 3);
+
+            Point[][] countours;
+            HierarchyIndex[] i;
+            Cv2.FindContours(src, out countours, out i, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
+            Debug.Log(countours);
+            foreach (var points in countours)
+            {
+                var rect = Cv2.BoundingRect(points);
+                if (rect.Width * rect.Height < 300)
+                {
+                    continue;
+                }
+                Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
+            }
+
+            DisplayMat(src, 4);
         }
 
         // 歩数確認画面から数字部分を抜き出す
@@ -117,7 +156,7 @@ namespace Kew
             // await UniTask.RunOnThreadPool(() =>
             // {
             // オブジェクト検出
-            var list = GetObjects(src, 100, 500);
+            var list = GetObjects(src, 400, 2000);
             // var tmp = list
             retval = list
                 .Where(x => x.Item2.X < 170 && (175 < x.Item2.Y && x.Item2.Y < 215)) // 位置で数字を抜き出す
@@ -205,6 +244,15 @@ namespace Kew
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             Cv2.MedianBlur(image, image, 5);
             Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 11, 2);
+            return image;
+        }
+
+        public Mat Threshold3(Mat image)
+        {
+            Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
+            Cv2.MedianBlur(image, image, 7);
+            DisplayMat(image, 1);
+            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 1.1);
             return image;
         }
 
@@ -374,6 +422,15 @@ namespace Kew
             targetImage.CopyTo(backgroundImage[new OpenCvSharp.Rect(leftUpper.X, leftUpper.Y, targetImage.Width, targetImage.Height)]);
 
             return backgroundImage;
+        }
+
+        public void MakeSharp(InputArray src, OutputArray dst)
+        {
+            float k = 3f;
+            var kernel = new Mat(3, 3, MatType.CV_32FC1, new float[]{-k / 9f, -k / 9f, -k / 9f
+                                                                    , -k / 9f, 1f + 8f*k / 9f, -k / 9f
+                                                                    , -k / 9f, -k / 9f, -k / 9f});
+            Cv2.Filter2D(src, dst, -1, kernel);
         }
 
         //---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -865,19 +922,18 @@ namespace Kew
         // test
         public void CallAtMainThred()
         {
-            DisplayMat(tempMat);
+            // DisplayMat(tempMat, 0);
         }
 
-        private void DisplayMat(Mat src)
+        public void DisplayMat(Mat src, int i)
         {
             Texture2D tex = OpenCvSharp.Unity.MatToTexture(src);
 
-            var target = imageObjList.First();
+            var target = imageObjList[i];
             target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 240 * tex.height / tex.width);
+            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200, 200 * tex.height / tex.width);
             target.gameObject.SetActive(true);
         }
-
     }
 
 }
