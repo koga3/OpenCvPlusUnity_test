@@ -117,6 +117,7 @@ namespace Kew
         }
 
         //test 区切れるかどうか
+        // TODO: これを下の奴に適応する
         public void ShowClipedNumRect(Mat src)
         {
             MakeSharp(src, src);
@@ -124,10 +125,11 @@ namespace Kew
             Threshold3(src);
             DisplayMat(src, 2);
             // opening
-            var kernel = Mat.Ones(5, 3, MatType.CV_8UC1);
+            var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel, iterations: 3);
             Cv2.Dilate(src, src, kernel, iterations: 1);
+            kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
+            Cv2.Erode(src, src, kernel, iterations: 3);
             DisplayMat(src, 3);
 
             Point[][] countours;
@@ -137,10 +139,11 @@ namespace Kew
             foreach (var points in countours)
             {
                 var rect = Cv2.BoundingRect(points);
-                if (rect.Width * rect.Height < 300)
+                if (!((25 < rect.Width && rect.Width < 100) && (85 < rect.Height && rect.Height < 130)))
                 {
                     continue;
                 }
+                Debug.Log($"{rect.Width}, {rect.Height}");
                 Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
@@ -252,7 +255,7 @@ namespace Kew
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             Cv2.MedianBlur(image, image, 7);
             DisplayMat(image, 1);
-            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 1.05);
+            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 0.9);
             return image;
         }
 
@@ -290,7 +293,7 @@ namespace Kew
                             // triming
                             var rect = Cv2.MinAreaRect(points);
                             float angle = rect.Angle;
-                            Debug.Log("Angle: " + rect.Angle);
+                            // Debug.Log("Angle: " + rect.Angle);
                             // テスト用タブレットでやったら、角度がずれていた
 #if UNITY_EDITOR
                             if (rect.Angle < -45)

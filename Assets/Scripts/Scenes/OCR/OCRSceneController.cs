@@ -197,9 +197,9 @@ namespace Kew
                     await UniTask.Yield(PlayerLoopTiming.Update, token);
                 }
 
-                // 判定動作を10フレームに1回にする
+                // 判定動作を3フレームに1回にする
                 int i = 0;
-                while (i < 10)
+                while (i < 3)
                 {
                     i++;
                     await UniTask.Yield(PlayerLoopTiming.Update, token);
@@ -229,7 +229,7 @@ namespace Kew
                             // 歩数確認画面から数字部分を抜き出す
                             if (matList.Value.Count() > 0)
                             {
-                                Debug.Log("display: " + matList.Value[0].Type());
+                                // Debug.Log("display: " + matList.Value[0].Type());
                                 // numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
                                 util.ShowClipedNumRect(matList.Value[0]);
                             }
