@@ -19,7 +19,7 @@ namespace Kew
     {
         // test        
         private List<Image> imageObjList;
-        private Mat tempMat = new Mat();
+        private Mat[] tempMat = new Mat[2] { new Mat(), new Mat() };
 
         //-----------------------------------------------------------------------------------------------------------------------------------
         // 画像処理
@@ -44,7 +44,7 @@ namespace Kew
 #if UNITY_EDITOR
         private readonly double minRectSize = 5000.0;
 #else
-        private readonly double minRectSize = 15000.0;
+        private readonly double minRectSize = 10000.0;
 #endif
         public double MinRectSize => minRectSize;
 
@@ -90,12 +90,24 @@ namespace Kew
                 {
                     using (Mat temp = new Mat())
                     {
+                        float scale = (float)image.Width / (float)displaySize.Width;
+                        // Make template's size match with image's size 
+                        Mat[] scaledTemplates = objectMats.Select(mat => mat.Resize(Size.Zero, scale, scale, InterpolationFlags.Cubic)).ToArray();
+                        List<OpenCvSharp.Rect> scaledJugdeAreas = judgeAreas.Select(rect => new OpenCvSharp.Rect((int)(rect.X * scale), (int)(rect.Y * scale), (int)(rect.Width * scale), (int)(rect.Height * scale))).ToList();
+                        tempMat[1] = scaledTemplates[0];
+                        // Debug.Log(objectMats[0].Width);
+
                         image.CopyTo(temp);
                         matList.ToList()[i] = Threshold2(temp);
-                        var points = GetPointByTemplateMatching(temp, objectMats).ToList();
-                        // Debug.Log($"Left Foot : {points[0]} {judgeAreas[0].Contains(points[0])}, Right Foot : {points[1]} {judgeAreas[1].Contains(points[1])}, Circle : {points[2]} {judgeAreas[2].Contains(points[2])}");
+                        if (temp.Width <= scaledTemplates.Max(x => x.Width) || temp.Height <= scaledTemplates.Max(x => x.Height))
+                        {
+                            continue;
+                        }
+                        // Debug.Log($"src={temp.Size()}, template={objectMats.Max(x => x.Width)}, {objectMats.Max(x => x.Height)}");
+                        var points = GetPointByTemplateMatching(temp, scaledTemplates).ToList();
+                        // if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
 
-                        var matchCnt = judgeAreas
+                        var matchCnt = scaledJugdeAreas
                             .Select((x, i) => new { area = x, i = i })
                             .Count(x => x.area.Contains(points[x.i]));
 
@@ -104,8 +116,8 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(100, 35), new Point2f(image.Width * 0.5f - 70, image.Height * 0.5f + 43));
-                                Cv2.Resize(retval, retval, new Size(), 4, 4);
+                                retval = image.GetRectSubPix(new Size(100 * scale, 35 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 43 * scale));
+                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Cubic); // 縦を50に合わせる
                             }
                         }
                         i++;
@@ -139,7 +151,42 @@ namespace Kew
             foreach (var points in countours)
             {
                 var rect = Cv2.BoundingRect(points);
-                if (!((25 < rect.Width && rect.Width < 100) && (85 < rect.Height && rect.Height < 130)))
+                if (!((13 < rect.Width && rect.Width < 50) && (42 < rect.Height && rect.Height < 65)))
+                {
+                    continue;
+                }
+                Debug.Log($"{rect.Width}, {rect.Height}");
+                Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
+            }
+
+            DisplayMat(src, 4);
+        }
+
+        public void ShowDevidedNumRect(Mat src)
+        {
+            Threshold4(src);
+            DisplayMat(src, 0);
+            // opening
+            var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
+            // // DisplayMat(src, 2);
+            Cv2.Erode(src, src, kernel, iterations: 2);
+            DisplayMat(src, 1);
+            Cv2.Dilate(src, src, kernel, iterations: 3);
+            DisplayMat(src, 2);
+            Cv2.Erode(src, src, kernel, iterations: 2);
+            // kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
+            DisplayMat(src, 3);
+
+            Point[][] countours;
+            HierarchyIndex[] i;
+            Cv2.FindContours(src, out countours, out i, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
+            // Debug.Log(countours.Count());
+            countours = countours.OrderBy(x => x[0].X).ToArray();
+            foreach (var points in countours)
+            {
+                var rect = Cv2.BoundingRect(points);
+                Debug.Log(rect);
+                if (!((9 < rect.Width && rect.Width < 64) && (30 < rect.Height && rect.Height < 46)))
                 {
                     continue;
                 }
@@ -258,7 +305,14 @@ namespace Kew
             Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 0.9);
             return image;
         }
-
+        public Mat Threshold4(Mat image)
+        {
+            Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
+            Cv2.MedianBlur(image, image, 7);
+            DisplayMat(image, 1);
+            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 9, 0.9);
+            return image;
+        }
         public IEnumerable<Mat> Threshold2(List<Mat> images)
         {
             return images.Select(x => Threshold2(x));
@@ -270,7 +324,8 @@ namespace Kew
             using (Mat working = Threshold(image.Clone()))
             {
                 //test
-                working.CopyTo(tempMat);
+                working.CopyTo(tempMat[0]);
+                // DisplayMat(working, 0);
 
                 Point[][] contourPoints;
                 HierarchyIndex[] i;
@@ -310,7 +365,7 @@ namespace Kew
                             Cv2.WarpAffine(image, rotated, m, image.Size(), InterpolationFlags.Cubic);
                             Cv2.GetRectSubPix(rotated, new Size(rect.Size.Width, rect.Size.Height), rect.Center, adding);
                             //resize
-                            Cv2.Resize(adding, adding, displaySize);
+                            // Cv2.Resize(adding, adding, displaySize);
                         }
                         rects.Add(adding.Clone());
                     }
@@ -357,38 +412,38 @@ namespace Kew
             int i = 0;
             List<Point> points = new List<Point>();
 
-            using (Mat tmp = new Mat())
+            // using (Mat tmp = new Mat())
+            // {
+            // Cv2.CvtColor(src, tmp, ColorConversionCodes.BGRA2BGR);
+
+            foreach (var template in templates)
             {
-                // Cv2.CvtColor(src, tmp, ColorConversionCodes.BGRA2BGR);
+                Mat result = new Mat();
+                // Debug.Log($"src={src.Size()}, template={template.Size()}");
+                Cv2.MatchTemplate(src, template, result, TemplateMatchModes.CCoeff);
+                double minval, maxVal;
+                Point minloc, maxLoc;
 
-                foreach (var template in templates)
+                Cv2.MinMaxLoc(result, out minval, out maxVal, out minloc, out maxLoc);
+                var topLeft = maxLoc;
+                var bottomRight = new Point(topLeft.X + template.Width, topLeft.Y + template.Height);
+                var center = new Point((topLeft.X + bottomRight.X) / 2, (topLeft.Y + bottomRight.Y) / 2);
+
+                if (maxVal > 7000000)
                 {
-                    Mat result = new Mat();
-                    // Debug.Log($"tmp={tmp.Size()}, template={templ}")
-                    Cv2.MatchTemplate(src, template, result, TemplateMatchModes.CCoeff);
-                    double minval, maxVal;
-                    Point minloc, maxLoc;
-
-                    Cv2.MinMaxLoc(result, out minval, out maxVal, out minloc, out maxLoc);
-                    var topLeft = maxLoc;
-                    var bottomRight = new Point(topLeft.X + template.Width, topLeft.Y + template.Height);
-                    var center = new Point((topLeft.X + bottomRight.X) / 2, (topLeft.Y + bottomRight.Y) / 2);
-
-                    if (maxVal > 7000000)
-                    {
-                        points.Add(center);
-                        Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(0, 0, 0), 2);
-                    }
-                    else
-                    {
-                        points.Add(new Point(-1, -1));
-                    }
-
-                    // debug
-                    // Cv2.DrawContours(src, result, -1, new Scalar(i == 0 ? 255 : 0, i == 1 ? 255 : 0, i == 2 ? 255 : 0), 2);
-                    // Debug.Log($"max value: {maxVal}, position: {maxLoc}");
-                    i++;
+                    points.Add(center);
+                    Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(0, 0, 0), 2);
                 }
+                else
+                {
+                    points.Add(new Point(-1, -1));
+                }
+
+                // debug
+                // Cv2.DrawContours(src, result, -1, new Scalar(i == 0 ? 255 : 0, i == 1 ? 255 : 0, i == 2 ? 255 : 0), 2);
+                // Debug.Log($"max value: {maxVal}, position: {maxLoc}");
+                i++;
+                // }
             }
             return points;
         }
@@ -925,12 +980,17 @@ namespace Kew
         // test
         public void CallAtMainThred()
         {
-            // DisplayMat(tempMat, 0);
+            // foreach (var mat in tempMat)
+            // {
+            //     if (mat.Width <= 0) continue;
+            //     DisplayMat(mat, 0);
+            // }
         }
 
         public void DisplayMat(Mat src, int i)
         {
-            Texture2D tex = OpenCvSharp.Unity.MatToTexture(src);
+            Texture2D tex = new Texture2D(0, 0);
+            tex = OpenCvSharp.Unity.MatToTexture(src);
 
             var target = imageObjList[i];
             target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));

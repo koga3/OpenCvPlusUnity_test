@@ -231,7 +231,7 @@ namespace Kew
                             {
                                 // Debug.Log("display: " + matList.Value[0].Type());
                                 // numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
-                                util.ShowClipedNumRect(matList.Value[0]);
+                                util.ShowDevidedNumRect(matList.Value[0]);
                             }
                         }
 
