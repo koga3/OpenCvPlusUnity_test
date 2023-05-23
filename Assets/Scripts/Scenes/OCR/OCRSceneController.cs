@@ -65,7 +65,8 @@ namespace Kew
         private ReactiveProperty<List<Tuple<Mat, string>>> numbers = new ReactiveProperty<List<Tuple<Mat, string>>>();
         private ReactiveProperty<List<Tuple<Texture2D, string>>> numbersTexture = new ReactiveProperty<List<Tuple<Texture2D, string>>>();
 
-        private ReactiveProperty<List<Tuple<int, float, float>>> recognized = new ReactiveProperty<List<Tuple<int, float, float>>>();
+        // private ReactiveProperty<List<Tuple<int, float, float>>> recognized = new ReactiveProperty<List<Tuple<int, float, float>>>();
+        private ReactiveProperty<List<int>> recognized = new ReactiveProperty<List<int>>();
 
         [SerializeField]
         private Image testImg;
@@ -73,6 +74,11 @@ namespace Kew
         private bool isInProgress = false;
         private void Start()
         {
+            if (!UniAndroidPermission.IsPermitted(AndroidPermission.WRITE_EXTERNAL_STORAGE))
+            {
+                UniAndroidPermission.RequestPermission(AndroidPermission.WRITE_EXTERNAL_STORAGE);
+            }
+
 #if UNITY_EDITOR
             objRawImage.transform.Rotate(new Vector3(0, 0, 90));
 #elif !DEBUG
@@ -124,38 +130,49 @@ namespace Kew
                 // matList.ForEach(x => x.Dispose());
             });
 
-            numbers.TakeUntilDestroy(this).ObserveOnMainThread().Skip(1).Subscribe(numbers =>
-            {
-                ShowMats(numbers);
-                // numbers.ToList().ForEach(x => x.Item1.Dispose());
+            // numbers.TakeUntilDestroy(this).ObserveOnMainThread().Skip(1).Subscribe(numbers =>
+            // {
+            //     ShowMats(numbers);
+            //     // numbers.ToList().ForEach(x => x.Item1.Dispose());
 
-                if (isShowRecognizedNumber.isOn)
-                {
-                    numbersTexture.Value = numbers.Select(x => new Tuple<Texture2D, string>(OpenCvSharp.Unity.MatToTexture(x.Item1), x.Item2)).ToList();
-                }
-            });
+            //     if (isShowRecognizedNumber.isOn)
+            //     {
+            //         numbersTexture.Value = numbers.Select(x => new Tuple<Texture2D, string>(OpenCvSharp.Unity.MatToTexture(x.Item1), x.Item2)).ToList();
+            //     }
+            // });
 
-            numbersTexture.TakeUntilDestroy(this).Skip(1).Subscribe(async numbers =>
-            {
-                if (isInProgress) return;
-                isInProgress = true;
-                var token = this.GetCancellationTokenOnDestroy();
-                var val = await util.RecognizeNumbers(numbers.Select(x => x.Item1), token);
-                if (val != null)
-                {
-                    recognized.Value = val.ToList();
-                }
-                isInProgress = false;
-            });
+            // numbersTexture.TakeUntilDestroy(this).Skip(1).Subscribe(async numbers =>
+            // {
+            //     if (isInProgress) return;
+            //     isInProgress = true;
+            //     var token = this.GetCancellationTokenOnDestroy();
+            //     var val = await util.RecognizeNumbers(numbers.Select(x => x.Item1), token);
+            //     if (val != null)
+            //     {
+            //         recognized.Value = val.ToList();
+            //     }
+            //     isInProgress = false;
+            // });
+
+            // recognized.TakeUntilDestroy(this).Skip(1).Subscribe(recognized =>
+            // {
+            //     if (recognized.Count() > 0)
+            //     {
+            //         Debug.Log("Result : " + recognized.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
+            //         isShuttered.Value = true;
+            //         walkCntPopup.SetActive(true);
+            //         walkCnt.text = recognized.Select(x => x.Item1.ToString()).Aggregate((x, y) => x + y);
+            //     }
+            // });
 
             recognized.TakeUntilDestroy(this).Skip(1).Subscribe(recognized =>
             {
+                if (recognized == null) return;
                 if (recognized.Count() > 0)
                 {
-                    Debug.Log("Result : " + recognized.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
                     isShuttered.Value = true;
                     walkCntPopup.SetActive(true);
-                    walkCnt.text = recognized.Select(x => x.Item1.ToString()).Aggregate((x, y) => x + y);
+                    walkCnt.text = recognized.Select(x => x.ToString()).Aggregate((x, y) => x + y);
                 }
             });
             walkCntCloseBtn.AddCallbackWithTarget(() =>
@@ -231,7 +248,7 @@ namespace Kew
                             {
                                 // Debug.Log("display: " + matList.Value[0].Type());
                                 // numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
-                                util.ShowDevidedNumRect(matList.Value[0]);
+                                recognized.Value = await util.RecognizeNumbers(matList.Value[0], isShowRecognizedNumber.isOn, token);
                             }
                         }
 

@@ -164,7 +164,8 @@ namespace Kew
             DisplayMat(src, 4);
         }
 
-        public void ShowDevidedNumRect(Mat src)
+        // 本筋
+        public async UniTask<List<int>> RecognizeNumbers(Mat src, bool isRecognize, CancellationToken token)
         {
             Threshold4(src);
             // DisplayMat(src, 0);
@@ -180,12 +181,14 @@ namespace Kew
             DisplayMat(src, 0);
 
             Point[][] countours;
-            HierarchyIndex[] i;
-            Cv2.FindContours(src, out countours, out i, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
+            {
+                HierarchyIndex[] i;
+                Cv2.FindContours(src, out countours, out i, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
+            }
             // Debug.Log(countours.Count());
             countours = countours.OrderBy(x => x[0].X).ToArray();
 
-            List<Mat> retList = new List<Mat>();
+            List<Mat> numList = new List<Mat>();
             foreach (var points in countours)
             {
                 var rect = Cv2.BoundingRect(points);
@@ -199,26 +202,26 @@ namespace Kew
                 // 数字ごとに分割する
                 if (rect.Width < 50)
                 {
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width, rect.Height), rect.Center, retList.Last());
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width, rect.Height), rect.Center, numList.Last());
                 }
                 else if (rect.Width < 75)
                 {
                     // ふたつくっついている
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Left + rect.Width / 4, rect.Center.Y), retList.Last()); // 左
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Right - rect.Width / 4, rect.Center.Y), retList.Last()); // みぎ
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Left + rect.Width / 4, rect.Center.Y), numList.Last()); // 左
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Right - rect.Width / 4, rect.Center.Y), numList.Last()); // みぎ
                 }
                 else
                 {
                     // みっつくっついてる
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Left + rect.Width / 6, rect.Center.Y), retList.Last()); // 左
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), rect.Center, retList.Last()); // 中央
-                    retList.Add(new Mat());
-                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Right - rect.Width / 6, rect.Center.Y), retList.Last()); // みぎ
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Left + rect.Width / 6, rect.Center.Y), numList.Last()); // 左
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), rect.Center, numList.Last()); // 中央
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Right - rect.Width / 6, rect.Center.Y), numList.Last()); // みぎ
 
                 }
 
@@ -227,8 +230,33 @@ namespace Kew
             }
 
             DisplayMat(src, 1);
-            DisplayNums(retList);
+            DisplayNums(numList);
             // retList.ForEach(x => x.Disp)
+
+            if (!isRecognize)
+            {
+                return null;
+            }
+
+            // 数字認識
+            {
+                for (int i = 0; i < numList.Count(); i++)
+                {
+                    var scale = numList[i].Height > numList[i].Width ? (double)numberHeight / numList[i].Height : (double)numberWidth / numList[i].Width;
+                    Cv2.Resize(numList[i], numList[i], Size.Zero, scale, scale);
+                    numList[i] = Overlay(numList[i], new Size(numberWidth, numberHeight));
+                }
+            }
+            List<Texture2D> numTexList = new List<Texture2D>();
+            foreach (var mat in numList)
+            {
+                numTexList.Add(OpenCvSharp.Unity.MatToTexture(mat));
+            }
+            var ret = await RecognizeNumbers(numTexList, token);
+            if (ret == null) return null;
+
+            return ret.Select(x => x.Item1).ToList();
+
         }
 
         // 歩数確認画面から数字部分を抜き出す
@@ -776,6 +804,7 @@ namespace Kew
                         int yBias = maxColumn * numberHeight - ((i / maxColumn) + 1) * numberHeight;
                         var data = GetPixels(pixels, xBias, yBias, numberWidth, numberHeight);
 
+                        // Debug.Log(data.Select(x => x.r).ToArray().Length.ToString() + "   " + targetPixels.Select(x => x.r).ToArray().Length.ToString());
                         float similarity = (float)CaluculateCosSimilarity(data.Select(x => x.r).ToArray(), targetPixels.Select(x => x.r).ToArray());
 
                         if (nearerList.Count >= k)
