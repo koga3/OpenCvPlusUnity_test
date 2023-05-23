@@ -254,6 +254,7 @@ namespace Kew
             }
             var ret = await RecognizeNumbers(numTexList, token);
             if (ret == null) return null;
+            Debug.Log("Result: " + ret.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
 
             return ret.Select(x => x.Item1).ToList();
 
@@ -731,7 +732,7 @@ namespace Kew
 
             // await using (UniTask.ReturnToMainThread())
             // {
-            Debug.Log(numberTexs.Count());
+            // Debug.Log(numberTexs.Count());
             // await UniTask.SwitchToThreadPool();
             List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>();
             // numberTexs.ToList().ForEach(async x =>
@@ -742,14 +743,14 @@ namespace Kew
             foreach (var tex in numberTexs)
             {
                 var temp = await OcrWithKnn(tex, token);
-                Debug.Log(temp);
+                // Debug.Log(temp);
                 result.Add(temp);
             }
 
-            Debug.Log(result.Count());
+            // Debug.Log(result.Count());
             if (result.Count() <= 0) return null;
 
-            if (result.Min(x => x.Item2 > 0.7f) && result.Min(x => x.Item3 > 0.001))
+            if (result.Min(x => x.Item2 >= 0.7f) && result.Min(x => x.Item3 > 0.001))
             {
                 return result;
             }
@@ -842,7 +843,7 @@ namespace Kew
             // {
             //     Debug.Log(x);
             // });
-            Debug.Log("result: " + retNum + "  " + maxCount);
+            // Debug.Log("result: " + retNum + "  " + maxCount);
 
             // if(maxCount > k * judgeRate){
             // Debug.Log("result!!: " + retNum);
