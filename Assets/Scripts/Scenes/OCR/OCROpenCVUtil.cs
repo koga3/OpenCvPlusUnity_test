@@ -119,7 +119,7 @@ namespace Kew
                             {
                                 maxCount = matchCnt;
                                 retval = image.GetRectSubPix(new Size(100 * scale, 35 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 41 * scale));
-                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Linear); // 縦を50に合わせる
+                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Lanczos4); // 縦を50に合わせる
                             }
                         }
                         i++;
@@ -168,17 +168,17 @@ namespace Kew
         public async UniTask<List<int>> RecognizeNumbers(Mat src, bool isRecognize, CancellationToken token)
         {
             Threshold4(src);
-            // DisplayMat(src, 0);
+            DisplayMat(src, 2);
             // opening
             var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
+            var kernel2 = Mat.Ones(5, 5, MatType.CV_8UC1);
             // // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel, iterations: 2);
-            // DisplayMat(src, 1);
-            Cv2.Dilate(src, src, kernel, iterations: 3);
-            // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel, iterations: 2);
-            // kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
-            DisplayMat(src, 0);
+            Cv2.Erode(src, src, kernel2, iterations: 1);
+            DisplayMat(src, 3);
+            Cv2.Dilate(src, src, kernel, iterations: 2);
+            DisplayMat(src, 4);
+            Cv2.Erode(src, src, kernel, iterations: 1);
+            DisplayMat(src, 5);
 
             Point[][] countours;
             {
@@ -229,7 +229,7 @@ namespace Kew
                 Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
-            DisplayMat(src, 1);
+            DisplayMat(src, 6);
             DisplayNums(numList);
             // retList.ForEach(x => x.Disp)
 
@@ -371,9 +371,10 @@ namespace Kew
         public Mat Threshold4(Mat image)
         {
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
+            // DisplayMat(image, 0);
             Cv2.MedianBlur(image, image, 7);
             DisplayMat(image, 1);
-            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 9, 0.9);
+            Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 23, 0.7);
             return image;
         }
         public IEnumerable<Mat> Threshold2(List<Mat> images)
