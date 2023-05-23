@@ -116,8 +116,8 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(100 * scale, 35 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 43 * scale));
-                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Cubic); // 縦を50に合わせる
+                                retval = image.GetRectSubPix(new Size(100 * scale, 35 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 41 * scale));
+                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Linear); // 縦を50に合わせる
                             }
                         }
                         i++;
@@ -165,36 +165,68 @@ namespace Kew
         public void ShowDevidedNumRect(Mat src)
         {
             Threshold4(src);
-            DisplayMat(src, 0);
+            // DisplayMat(src, 0);
             // opening
             var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             // // DisplayMat(src, 2);
             Cv2.Erode(src, src, kernel, iterations: 2);
-            DisplayMat(src, 1);
+            // DisplayMat(src, 1);
             Cv2.Dilate(src, src, kernel, iterations: 3);
-            DisplayMat(src, 2);
+            // DisplayMat(src, 2);
             Cv2.Erode(src, src, kernel, iterations: 2);
             // kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
-            DisplayMat(src, 3);
+            DisplayMat(src, 0);
 
             Point[][] countours;
             HierarchyIndex[] i;
             Cv2.FindContours(src, out countours, out i, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
             // Debug.Log(countours.Count());
             countours = countours.OrderBy(x => x[0].X).ToArray();
+
+            List<Mat> retList = new List<Mat>();
             foreach (var points in countours)
             {
                 var rect = Cv2.BoundingRect(points);
-                Debug.Log(rect);
-                if (!((9 < rect.Width && rect.Width < 64) && (30 < rect.Height && rect.Height < 46)))
+                // Debug.Log(rect);
+                if (!((9 < rect.Width && rect.Width < 90) && (30 < rect.Height && rect.Height < 46)))
                 {
                     continue;
                 }
                 Debug.Log($"{rect.Width}, {rect.Height}");
+
+                // 数字ごとに分割する
+                if (rect.Width < 50)
+                {
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width, rect.Height), rect.Center, retList.Last());
+                }
+                else if (rect.Width < 75)
+                {
+                    // ふたつくっついている
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Left + rect.Width / 4, rect.Center.Y), retList.Last()); // 左
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Right - rect.Width / 4, rect.Center.Y), retList.Last()); // みぎ
+                }
+                else
+                {
+                    // みっつくっついてる
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Left + rect.Width / 6, rect.Center.Y), retList.Last()); // 左
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), rect.Center, retList.Last()); // 中央
+                    retList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Right - rect.Width / 6, rect.Center.Y), retList.Last()); // みぎ
+
+                }
+
+                // デバッグ用四角描写
                 Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
-            DisplayMat(src, 4);
+            DisplayMat(src, 1);
+            DisplayNums(retList, 2);
+            // retList.ForEach(x => x.Disp)
         }
 
         // 歩数確認画面から数字部分を抜き出す
@@ -995,6 +1027,26 @@ namespace Kew
             var target = imageObjList[i];
             target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
             target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200, 200 * tex.height / tex.width);
+            target.gameObject.SetActive(true);
+        }
+
+        public void DisplayNums(IEnumerable<Mat> matList, int startIndex)
+        {
+            foreach (var mat in matList)
+            {
+                DisplayNum(mat, startIndex);
+                startIndex++;
+            }
+        }
+
+        private void DisplayNum(Mat src, int i)
+        {
+            Texture2D tex = new Texture2D(0, 0);
+            tex = OpenCvSharp.Unity.MatToTexture(src);
+
+            var target = imageObjList[i];
+            target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200 * tex.width / tex.height, 200);
             target.gameObject.SetActive(true);
         }
     }
