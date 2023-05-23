@@ -107,7 +107,7 @@ namespace Kew
 
             // util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList());
             // test
-            util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList(), testImageObjList);
+            util = new OCROpenCVUtil(objectTextures.Select(tex => OpenCvSharp.Unity.TextureToMat(tex)).ToList(), testImageObjList, numberObjList);
 
             shutterBtn.AddCallbackWithTarget(() => Shatter(), this);
             saveBtn.AddCallbackWithTarget(() => SaveNumbers(this.GetCancellationTokenOnDestroy()).Forget(), this);

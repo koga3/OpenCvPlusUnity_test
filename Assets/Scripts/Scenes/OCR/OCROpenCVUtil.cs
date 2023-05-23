@@ -49,6 +49,7 @@ namespace Kew
         public double MinRectSize => minRectSize;
 
         private Mat[] objectMats = new Mat[2];
+        private List<GameObject> numberObjList;
 
         public OCROpenCVUtil(List<Mat> objectMats)
         {
@@ -56,7 +57,7 @@ namespace Kew
         }
 
         // test
-        public OCROpenCVUtil(List<Mat> objectMats, List<Image> imageObjs)
+        public OCROpenCVUtil(List<Mat> objectMats, List<Image> imageObjs, List<GameObject> numberObjList)
         {
             objectMats.CopyTo(this.objectMats);
             int i = 0;
@@ -66,6 +67,7 @@ namespace Kew
                 i++;
             }
             imageObjList = imageObjs;
+            this.numberObjList = numberObjList;
         }
 
         // 歩数確認画面かどうか判定して画面のMatを返す(歩数確認画面ではなければnull)
@@ -192,7 +194,7 @@ namespace Kew
                 {
                     continue;
                 }
-                Debug.Log($"{rect.Width}, {rect.Height}");
+                // Debug.Log($"{rect.Width}, {rect.Height}");
 
                 // 数字ごとに分割する
                 if (rect.Width < 50)
@@ -225,7 +227,7 @@ namespace Kew
             }
 
             DisplayMat(src, 1);
-            DisplayNums(retList, 2);
+            DisplayNums(retList);
             // retList.ForEach(x => x.Disp)
         }
 
@@ -604,6 +606,9 @@ namespace Kew
                 int width = maxColumn * numberWidth, height = maxRaw * numberHeight;
                 // Color32[] numImgPixels = tex2d.GetPixels32();
                 // input.CopyTo(output);
+                var scale = input.Height > input.Width ? (double)numberHeight / input.Height : (double)numberWidth / input.Width;
+                Cv2.Resize(input, input, Size.Zero, scale, scale);
+                input = Overlay(input, new Size(numberWidth, numberHeight));
 
                 if (formerSaveData == null)
                 {
@@ -1030,12 +1035,17 @@ namespace Kew
             target.gameObject.SetActive(true);
         }
 
-        public void DisplayNums(IEnumerable<Mat> matList, int startIndex)
+        public void DisplayNums(IEnumerable<Mat> matList)
         {
+            int startIndex = 0;
             foreach (var mat in matList)
             {
                 DisplayNum(mat, startIndex);
                 startIndex++;
+            }
+            for (int i = startIndex; i < numberObjList.Count(); i++)
+            {
+                numberObjList[i].SetActive(false);
             }
         }
 
@@ -1044,10 +1054,11 @@ namespace Kew
             Texture2D tex = new Texture2D(0, 0);
             tex = OpenCvSharp.Unity.MatToTexture(src);
 
-            var target = imageObjList[i];
-            target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200 * tex.width / tex.height, 200);
-            target.gameObject.SetActive(true);
+            var target = numberObjList[i];
+            var image = target.GetComponentInChildren<Image>();
+            image.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            image.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200 * tex.width / tex.height, 200);
+            target.SetActive(true);
         }
     }
 
