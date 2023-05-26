@@ -226,7 +226,7 @@ namespace Kew
                 }
 
                 // デバッグ用四角描写
-                Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
+                // Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
             DisplayMat(src, 6);
@@ -729,27 +729,12 @@ namespace Kew
 
         public async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Texture2D> numberTexs, CancellationToken token)
         {
-            // await UniTask.SwitchToMainThread();
-
-            // await using (UniTask.ReturnToMainThread())
-            // {
-            // Debug.Log(numberTexs.Count());
-            // await UniTask.SwitchToThreadPool();
-            List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>();
-            // numberTexs.ToList().ForEach(async x =>
-            // {
-            //     var temp = await ;
-            // });
-
-            foreach (var tex in numberTexs)
+            var result = await OcrWithKnn(numberTexs, token);
+            if (result.Count() <= 0)
             {
-                var temp = await OcrWithKnn(tex, token);
-                // Debug.Log(temp);
-                result.Add(temp);
+                Debug.Log("No result");
+                return null;
             }
-
-            // Debug.Log(result.Count());
-            if (result.Count() <= 0) return null;
 
             if (result.Min(x => x.Item2 >= 0.7f) && result.Min(x => x.Item3 > 0.001))
             {
@@ -763,9 +748,26 @@ namespace Kew
             // }
         }
 
-        private readonly int k = 10;
-        public async UniTask<Tuple<int, float, float>> OcrWithKnn(Texture2D tex2d, CancellationToken token)
+        private class Number
         {
+            public Color[] Pixels;
+            public int Count;
+            public Number()
+            {
+
+            }
+            public Number(Color[] pixels, int count)
+            {
+                Pixels = pixels;
+                Count = count;
+            }
+        }
+
+
+        private readonly int k = 10;
+        public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Texture2D> tex2dlist, CancellationToken token)
+        {
+            // データ読み込み
             if (!Directory.Exists(numberImageDataSavingPath))
             {
                 Directory.CreateDirectory(numberImageDataSavingPath);
@@ -775,60 +777,101 @@ namespace Kew
 #else
             string path = numberImageDataSavingPath + "/";
 #endif
+            List<Number> numberData = new List<Number>();
 
-            List<Tuple<int, float>> nearerList = new List<Tuple<int, float>>();
-            var targetPixels = tex2d.GetPixels();
-            for (int number = 0; number < 10; number++)
+            for (int num = 0; num < 10; num++)
             {
-                int count = PlayerPrefs.GetInt("ocr_data_count_no" + number, 0);
+                int count = PlayerPrefs.GetInt("ocr_data_count_no" + num, 0);
                 if (count <= 0)
                 {
                     continue;
                 }
 
                 // データから画像読み込み
-                var datas = ReadPng(path + number + ".png");
+                var datas = ReadPng(path + num + ".png");
                 datas.Apply();
                 // Debug.Log(path + number + ".png");
                 if (datas == null)
                 {
-                    Debug.LogError($"Cannot open file : {path + number + ".png"}");
+                    Debug.LogError($"Cannot open file : {path + num + ".png"}");
                 }
                 var pixels = datas.GetPixels();
 
-                await using (UniTask.ReturnToMainThread(cancellationToken: token))
+                numberData.Add(new Number(pixels, count));
+            }
+
+            // 判定
+            var lockObject = new object();
+            List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>(Enumerable.Repeat(new Tuple<int, float, float>(0, 0, 0), tex2dlist.Count()));
+            Debug.Log($"実行中のスレッド 0={Thread.CurrentThread.ManagedThreadId}");
+            var pixelsList = tex2dlist.Select(x => x.GetPixels());
+
+
+
+            async UniTask CreateTask(Color[] pixels, int i)
+            {
+                Debug.Log($"実行中のスレッド 1={Thread.CurrentThread.ManagedThreadId}");
+                var temp = await OcrWithKnn(pixels, numberData, token);
+                lock (lockObject)
                 {
-                    await UniTask.SwitchToThreadPool();
-                    for (int i = 0; i < count; i++)
+                    result[i] = temp; // クリティカル
+                }
+            }
+            var tasks = new List<UniTask>();
+            int i = 0; // 何番目の数字か
+            foreach (var pixels in pixelsList)
+            {
+                tasks.Add(CreateTask(pixels, i));
+                i++;
+            }
+
+            await using (UniTask.ReturnToMainThread())
+            {
+                await UniTask.SwitchToThreadPool();
+                await UniTask.WhenAll(tasks);
+            }
+
+            return result;
+        }
+
+        private async UniTask<Tuple<int, float, float>> OcrWithKnn(Color[] targetPixels, List<Number> numberData, CancellationToken token)
+        {
+            List<Tuple<int, float>> nearerList = new List<Tuple<int, float>>();
+            // objectをインスタンス化
+            var lockObject = new object();
+
+            async UniTask CreateTask(int num)
+            {
+                // await UniTask.Delay(2000);
+                await UniTask.RunOnThreadPool(() =>
+                {
+                    Debug.Log($"実行中のスレッド 2={Thread.CurrentThread.ManagedThreadId}");
+                    var number = numberData[num];
+                    for (int i = 0; i < number.Count; i++)
                     {
                         // 画像切り出し
                         int xBias = maxColumn * numberWidth - ((i % maxColumn) + 1) * numberWidth;
                         int yBias = maxColumn * numberHeight - ((i / maxColumn) + 1) * numberHeight;
-                        var data = GetPixels(pixels, xBias, yBias, numberWidth, numberHeight);
+                        var data = GetPixels(number.Pixels, xBias, yBias, numberWidth, numberHeight);
 
-                        // Debug.Log(data.Select(x => x.r).ToArray().Length.ToString() + "   " + targetPixels.Select(x => x.r).ToArray().Length.ToString());
                         float similarity = (float)CaluculateCosSimilarity(data.Select(x => x.r).ToArray(), targetPixels.Select(x => x.r).ToArray());
 
-                        if (nearerList.Count >= k)
+                        lock (lockObject)
                         {
-                            if (nearerList.Last().Item2 < similarity)
-                            {
-                                nearerList.RemoveAt(nearerList.Count - 1);
-                                nearerList.Add(new Tuple<int, float>(number, similarity));
-                                nearerList = nearerList.OrderByDescending(val => val.Item2).ToList();
-                            }
+                            nearerList.Add(new Tuple<int, float>(num, similarity));
                         }
-                        else
-                        {
-                            nearerList.Add(new Tuple<int, float>(number, similarity));
-                            nearerList = nearerList.OrderByDescending(val => val.Item2).ToList();
-                        }
-                        // Debug.Log(number + ":  " + distance + " last: " + nearerList.Last());
-                        // yield return null;
                     }
-                }
+                });
             }
 
+            var tasks = new List<UniTask>();
+            for (int num = 0; num < 10; num++)
+            {
+                tasks.Add(CreateTask(num));
+            }
+            await UniTask.WhenAll(tasks);
+
+            nearerList = nearerList.OrderByDescending(val => val.Item2).ToList().GetRange(0, 10);
             int maxCount = 0, retNum = 0;
             for (int number = 0; number < 10; number++)
             {
@@ -840,14 +883,6 @@ namespace Kew
                     maxCount = numCount;
                 }
             }
-            // nearerList.ForEach(x =>
-            // {
-            //     Debug.Log(x);
-            // });
-            // Debug.Log("result: " + retNum + "  " + maxCount);
-
-            // if(maxCount > k * judgeRate){
-            // Debug.Log("result!!: " + retNum);
             // 判定した番号, k中の割合, 最小距離
             return new Tuple<int, float, float>(retNum, maxCount / (float)nearerList.Count, nearerList.First().Item2);
         }
