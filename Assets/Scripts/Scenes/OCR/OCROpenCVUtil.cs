@@ -22,6 +22,9 @@ namespace Kew
         private Mat[] tempMat = new Mat[2] { new Mat(), new Mat() };
 
         //-----------------------------------------------------------------------------------------------------------------------------------
+        // 数字判定用画像の保存用
+        List<Number> numberData;
+
         // 画像処理
         // 足、マルを判定する範囲
         List<OpenCvSharp.Rect> judgeAreas = new List<OpenCvSharp.Rect>
@@ -54,6 +57,8 @@ namespace Kew
         public OCROpenCVUtil(List<Mat> objectMats)
         {
             objectMats.CopyTo(this.objectMats);
+            // ロード
+            this.numberData = LoadData();
         }
 
         // test
@@ -68,6 +73,8 @@ namespace Kew
             }
             imageObjList = imageObjs;
             this.numberObjList = numberObjList;
+            // ロード
+            this.numberData = LoadData();
         }
 
         // 歩数確認画面かどうか判定して画面のMatを返す(歩数確認画面ではなければnull)
@@ -107,13 +114,13 @@ namespace Kew
                         }
                         // Debug.Log($"src={temp.Size()}, template={objectMats.Max(x => x.Width)}, {objectMats.Max(x => x.Height)}");
                         var points = GetPointByTemplateMatching(temp, scaledTemplates).ToList();
-                        // if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
+                        if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
 
                         var matchCnt = scaledJugdeAreas
                             .Select((x, i) => new { area = x, i = i })
                             .Count(x => x.area.Contains(points[x.i]));
 
-                        // if (matchCnt >= 2)
+                        if (matchCnt >= 2)
                         {
                             if (matchCnt > maxCount)
                             {
@@ -131,7 +138,6 @@ namespace Kew
         }
 
         //test 区切れるかどうか
-        // TODO: これを下の奴に適応する
         public void ShowClipedNumRect(Mat src)
         {
             MakeSharp(src, src);
@@ -173,11 +179,11 @@ namespace Kew
             var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             var kernel2 = Mat.Ones(5, 5, MatType.CV_8UC1);
             // // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel2, iterations: 1);
+            Cv2.Erode(src, src, kernel, iterations: 1);
             DisplayMat(src, 3);
             Cv2.Dilate(src, src, kernel, iterations: 2);
             DisplayMat(src, 4);
-            Cv2.Erode(src, src, kernel, iterations: 1);
+            Cv2.Erode(src, src, kernel, iterations: 2);
             DisplayMat(src, 5);
 
             Point[][] countours;
@@ -493,7 +499,7 @@ namespace Kew
                 var bottomRight = new Point(topLeft.X + template.Width, topLeft.Y + template.Height);
                 var center = new Point((topLeft.X + bottomRight.X) / 2, (topLeft.Y + bottomRight.Y) / 2);
 
-                if (maxVal > 7000000)
+                if (i == 0 ? maxVal > 5000000 : maxVal > 5000000)
                 {
                     points.Add(center);
                     Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(0, 0, 0), 2);
@@ -505,7 +511,7 @@ namespace Kew
 
                 // debug
                 // Cv2.DrawContours(src, result, -1, new Scalar(i == 0 ? 255 : 0, i == 1 ? 255 : 0, i == 2 ? 255 : 0), 2);
-                // Debug.Log($"max value: {maxVal}, position: {maxLoc}");
+                Debug.Log($"max value: {maxVal}, position: {maxLoc}");
                 i++;
                 // }
             }
@@ -732,7 +738,7 @@ namespace Kew
             var result = await OcrWithKnn(numberTexs, token);
             if (result.Count() <= 0)
             {
-                Debug.Log("No result");
+                // Debug.Log("No result");
                 return null;
             }
 
@@ -763,9 +769,7 @@ namespace Kew
             }
         }
 
-
-        private readonly int k = 10;
-        public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Texture2D> tex2dlist, CancellationToken token)
+        private List<Number> LoadData()
         {
             // データ読み込み
             if (!Directory.Exists(numberImageDataSavingPath))
@@ -781,6 +785,7 @@ namespace Kew
 
             for (int num = 0; num < 10; num++)
             {
+
                 int count = PlayerPrefs.GetInt("ocr_data_count_no" + num, 0);
                 if (count <= 0)
                 {
@@ -800,18 +805,23 @@ namespace Kew
                 numberData.Add(new Number(pixels, count));
             }
 
+            return numberData;
+        }
+
+
+        private readonly int k = 10;
+        public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Texture2D> tex2dlist, CancellationToken token)
+        {
             // 判定
             var lockObject = new object();
             List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>(Enumerable.Repeat(new Tuple<int, float, float>(0, 0, 0), tex2dlist.Count()));
-            Debug.Log($"実行中のスレッド 0={Thread.CurrentThread.ManagedThreadId}");
+            // Debug.Log($"実行中のスレッド 0={Thread.CurrentThread.ManagedThreadId}");
             var pixelsList = tex2dlist.Select(x => x.GetPixels());
-
-
 
             async UniTask CreateTask(Color[] pixels, int i)
             {
-                Debug.Log($"実行中のスレッド 1={Thread.CurrentThread.ManagedThreadId}");
-                var temp = await OcrWithKnn(pixels, numberData, token);
+                // Debug.Log($"実行中のスレッド 1={Thread.CurrentThread.ManagedThreadId}");
+                var temp = await OcrWithKnn(pixels, this.numberData, token);
                 lock (lockObject)
                 {
                     result[i] = temp; // クリティカル
@@ -845,7 +855,7 @@ namespace Kew
                 // await UniTask.Delay(2000);
                 await UniTask.RunOnThreadPool(() =>
                 {
-                    Debug.Log($"実行中のスレッド 2={Thread.CurrentThread.ManagedThreadId}");
+                    // Debug.Log($"実行中のスレッド 2={Thread.CurrentThread.ManagedThreadId}");
                     var number = numberData[num];
                     for (int i = 0; i < number.Count; i++)
                     {
@@ -871,7 +881,7 @@ namespace Kew
             }
             await UniTask.WhenAll(tasks);
 
-            nearerList = nearerList.OrderByDescending(val => val.Item2).ToList().GetRange(0, 10);
+            nearerList = nearerList.OrderByDescending(val => val.Item2).ToList().GetRange(0, k);
             int maxCount = 0, retNum = 0;
             for (int number = 0; number < 10; number++)
             {
@@ -1081,15 +1091,6 @@ namespace Kew
         // }
 
         // test
-        public void CallAtMainThred()
-        {
-            // foreach (var mat in tempMat)
-            // {
-            //     if (mat.Width <= 0) continue;
-            //     DisplayMat(mat, 0);
-            // }
-        }
-
         public void DisplayMat(Mat src, int i)
         {
             Texture2D tex = new Texture2D(0, 0);

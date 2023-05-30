@@ -49,6 +49,9 @@ namespace Kew
         [SerializeField]
         private Toggle isShowRecognizedNumber;
 
+        [SerializeField]
+        private GameObject recognizing;
+
         private OCROpenCVUtil util;
 
 
@@ -127,6 +130,7 @@ namespace Kew
             matList.TakeUntilDestroy(this).Skip(1).Subscribe(matList =>
             {
                 ShowMats(matList);
+                recognizing.SetActive(matList.Count() > 0);
                 // matList.ForEach(x => x.Dispose());
             });
 
@@ -208,6 +212,8 @@ namespace Kew
         {
             while (true)
             {
+                // recognizing.SetActive(matList.Value.Count() > 0);
+
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
                 while (isShuttered.Value)
                 {
@@ -227,10 +233,6 @@ namespace Kew
                     using (Mat copy = new Mat())
                     {
                         webCamMat.CopyTo(copy);
-                        // util.MakeSharp(copy, copy);
-                        // util.DisplayMat(copy, 1);
-                        // util.DisplayMat(webCamMat, 0);
-                        // Debug.Log(tex);
                         await using (UniTask.ReturnToMainThread(token))
                         {
                             await UniTask.SwitchToThreadPool();
@@ -246,13 +248,9 @@ namespace Kew
                             // 歩数確認画面から数字部分を抜き出す
                             if (matList.Value.Count() > 0)
                             {
-                                // Debug.Log("display: " + matList.Value[0].Type());
-                                // numbers.Value = (await util.ClipNumber(matList.Value[0], token)).ToList();
                                 recognized.Value = await util.RecognizeNumbers(matList.Value[0], isShowRecognizedNumber.isOn, token);
                             }
                         }
-
-                        util.CallAtMainThred();
                     }
                 }
             }
