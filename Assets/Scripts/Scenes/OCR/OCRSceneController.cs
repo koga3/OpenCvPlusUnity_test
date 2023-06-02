@@ -64,7 +64,7 @@ namespace Kew
 
         private ReactiveProperty<bool> isShuttered = new ReactiveProperty<bool>(false);
 
-        private ReactiveProperty<List<Mat>> matList = new ReactiveProperty<List<Mat>>(new List<Mat>());
+        private ReactiveProperty<Mat> walkCountDisplay = new ReactiveProperty<Mat>(new Mat());
         private ReactiveProperty<List<Tuple<Mat, string>>> numbers = new ReactiveProperty<List<Tuple<Mat, string>>>();
         private ReactiveProperty<List<Tuple<Texture2D, string>>> numbersTexture = new ReactiveProperty<List<Tuple<Texture2D, string>>>();
 
@@ -77,6 +77,8 @@ namespace Kew
         private bool isInProgress = false;
         private void Start()
         {
+            var token = this.GetCancellationTokenOnDestroy();
+
             if (!UniAndroidPermission.IsPermitted(AndroidPermission.WRITE_EXTERNAL_STORAGE))
             {
                 UniAndroidPermission.RequestPermission(AndroidPermission.WRITE_EXTERNAL_STORAGE);
@@ -127,11 +129,29 @@ namespace Kew
                 saveObjectPopup.SetActive(false);
             }, this);
 
-            matList.TakeUntilDestroy(this).Skip(1).Subscribe(matList =>
+            var lockObject = new object();
+            walkCountDisplay.TakeUntilDestroy(this).Skip(1).Subscribe(async display =>
             {
-                ShowMats(matList);
-                recognizing.SetActive(matList.Count() > 0);
+                // if (display != null) util.DisplayMat(display, 0);
+                recognizing.SetActive(display != null);
                 // matList.ForEach(x => x.Dispose());
+
+                lock (lockObject)
+                {
+                    if (isInProgress)
+                    {
+                        Debug.Log("this is in progress");
+                        return;
+                    }
+
+                    // 歩数確認画面から数字部分を抜き出す
+                    isInProgress = true;
+                }
+                if (display != null)
+                {
+                    recognized.Value = await util.RecognizeNumbers(display, isShowRecognizedNumber.isOn, token);
+                }
+                isInProgress = false;
             });
 
             // numbers.TakeUntilDestroy(this).ObserveOnMainThread().Skip(1).Subscribe(numbers =>
@@ -187,7 +207,7 @@ namespace Kew
 
 
             // await WaitCameraInitializedCoroutine(this.GetCancellationTokenOnDestroy());
-            var token = this.GetCancellationTokenOnDestroy();
+
 
             SetMatsRutine(token).Forget();
 
@@ -238,18 +258,7 @@ namespace Kew
                             await UniTask.SwitchToThreadPool();
                             // 画像から歩数確認画面を抜き出す
                             List<Mat> list = new List<Mat>();
-                            var result = await util.GetWalkCountDisplay(webCamMat, token);
-                            if (result != null)
-                            {
-                                list.Add(result);
-                            }
-                            matList.Value = list;
-
-                            // 歩数確認画面から数字部分を抜き出す
-                            if (matList.Value.Count() > 0)
-                            {
-                                recognized.Value = await util.RecognizeNumbers(matList.Value[0], isShowRecognizedNumber.isOn, token);
-                            }
+                            walkCountDisplay.Value = await util.GetWalkCountDisplay(webCamMat, token);
                         }
                     }
                 }

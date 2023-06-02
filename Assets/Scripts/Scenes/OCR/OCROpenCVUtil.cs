@@ -34,8 +34,8 @@ namespace Kew
             //     new OpenCvSharp.Rect(125, 245, 50, 50)
             // };            
             {
-                new OpenCvSharp.Rect(123, 60, 50, 50),
-                new OpenCvSharp.Rect(125, 245, 50, 50)
+                new OpenCvSharp.Rect(135, 65, 40, 40),
+                new OpenCvSharp.Rect(135, 252, 40, 40)
             };
 
         // 出力する数字画像の大きさ
@@ -47,7 +47,7 @@ namespace Kew
 #if UNITY_EDITOR
         private readonly double minRectSize = 5000.0;
 #else
-        private readonly double minRectSize = 10000.0;
+        private readonly double minRectSize = 5000.0;
 #endif
         public double MinRectSize => minRectSize;
 
@@ -81,9 +81,11 @@ namespace Kew
         public async UniTask<Mat> GetWalkCountDisplay(Mat src, CancellationToken token)
         {
             SynchronizationContext context = SynchronizationContext.Current;
-            // Debug.Log(context);
 
             Mat retval = null;
+            Mat test = new Mat();
+
+            Mat m = new Mat();
             // 実装用
             await UniTask.RunOnThreadPool(() =>
             {
@@ -110,11 +112,12 @@ namespace Kew
                         matList.ToList()[i] = Threshold2(temp);
                         if (temp.Width <= scaledTemplates.Max(x => x.Width) || temp.Height <= scaledTemplates.Max(x => x.Height))
                         {
+                            i++;
                             continue;
                         }
                         // Debug.Log($"src={temp.Size()}, template={objectMats.Max(x => x.Width)}, {objectMats.Max(x => x.Height)}");
                         var points = GetPointByTemplateMatching(temp, scaledTemplates).ToList();
-                        if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
+                        // if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
 
                         var matchCnt = scaledJugdeAreas
                             .Select((x, i) => new { area = x, i = i })
@@ -125,15 +128,41 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(100 * scale, 35 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 41 * scale));
-                                Cv2.Resize(retval, retval, new Size(143, 50), interpolation: InterpolationFlags.Lanczos4); // 縦を50に合わせる
+                                retval = image.GetRectSubPix(new Size(90 * scale, 38 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 41 * scale));
+                                Cv2.Resize(retval, retval, new Size(118, 50), interpolation: InterpolationFlags.Lanczos4); // 縦を50に合わせる
+                                // Debug.Log("laplacian" + m.At<float>(0, 0));
+                                // Debug.Log("laplacian" + m.Reduce(ReduceDimension.Row, ReduceTypes.Sum, -1).Reduce(ReduceDimension.Column, ReduceTypes.Sum, -1).At<float>(0, 0));
+                                // m.Dispose();
+                                test = image;
+
+                                /*
+                                // ボケ度確認
+                                Mat sum = new Mat();
+                                retval.ConvertTo(sum, MatType.CV_64FC1);
+                                Cv2.Reduce(retval, sum, ReduceDimension.Row, ReduceTypes.Avg, MatType.CV_64FC1);
+                                Cv2.Reduce(sum, sum, ReduceDimension.Column, ReduceTypes.Avg, -1);
+                                double boke = 200.0 / sum.At<double>(0, 0);
+                                Debug.Log("ボケ度" + boke + sum.Size());
+                                if (boke > 1.0)
+                                {
+                                    retval = null;
+                                }
+                                */
                             }
                         }
                         i++;
+
+                        // test
+                        Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
+                        Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
+                        Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
+                        Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
                     }
                 }
             }, cancellationToken: token);
 
+            // if (test.Width > 0) DisplayMat(test, 0, 500);
+            // if (m.Width > 0) DisplayMat(m, 0);
             return retval;
         }
 
@@ -141,9 +170,9 @@ namespace Kew
         public void ShowClipedNumRect(Mat src)
         {
             MakeSharp(src, src);
-            DisplayMat(src, 0);
+            // DisplayMat(src, 0);
             Threshold3(src);
-            DisplayMat(src, 2);
+            // DisplayMat(src, 2);
             // opening
             var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             // DisplayMat(src, 2);
@@ -173,15 +202,22 @@ namespace Kew
         // 本筋
         public async UniTask<List<int>> RecognizeNumbers(Mat src, bool isRecognize, CancellationToken token)
         {
+            Mat temp = new Mat();
+            Cv2.CvtColor(src, temp, OpenCvSharp.ColorConversionCodes.RGB2GRAY);
+            // Cv2.Laplacian(temp, temp, MatType.CV_32FC2);
+            Cv2.Laplacian(temp, temp, MatType.CV_8UC1, 3);
+
+            DisplayMat(temp, 1);
+
             Threshold4(src);
-            DisplayMat(src, 2);
+            // DisplayMat(src, 2);
             // opening
             var kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             var kernel2 = Mat.Ones(5, 5, MatType.CV_8UC1);
             // // DisplayMat(src, 2);
-            Cv2.Erode(src, src, kernel, iterations: 1);
+            Cv2.Erode(src, src, kernel2, iterations: 1);
             DisplayMat(src, 3);
-            Cv2.Dilate(src, src, kernel, iterations: 2);
+            Cv2.Dilate(src, src, kernel, iterations: 3);
             DisplayMat(src, 4);
             Cv2.Erode(src, src, kernel, iterations: 2);
             DisplayMat(src, 5);
@@ -252,6 +288,7 @@ namespace Kew
                     Cv2.Resize(numList[i], numList[i], Size.Zero, scale, scale);
                     numList[i] = Overlay(numList[i], new Size(numberWidth, numberHeight));
                 }
+                DisplayMat(numList[0], 3, 10);
             }
             List<Texture2D> numTexList = new List<Texture2D>();
             foreach (var mat in numList)
@@ -370,7 +407,7 @@ namespace Kew
         {
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             Cv2.MedianBlur(image, image, 7);
-            DisplayMat(image, 1);
+            // DisplayMat(image, 1);
             Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 9, 0.9);
             return image;
         }
@@ -379,7 +416,7 @@ namespace Kew
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             // DisplayMat(image, 0);
             Cv2.MedianBlur(image, image, 7);
-            DisplayMat(image, 1);
+            DisplayMat(image, 2);
             Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 23, 0.7);
             return image;
         }
@@ -406,7 +443,6 @@ namespace Kew
                     return (points.Count() == 4 && Cv2.ContourArea(points) > minRectSize);
                 }).ToArray();
 
-                // Debug.Log(contourPoints.Length);
 
                 List<Mat> rects = new List<Mat>();
                 foreach (var points in contourPoints)
@@ -417,6 +453,11 @@ namespace Kew
                         {
                             // triming
                             var rect = Cv2.MinAreaRect(points);
+                            if (!(0.90 < rect.Size.Height / rect.Size.Width && rect.Size.Height / rect.Size.Width < 1.2))
+                            {
+                                continue;
+                            }
+                            // Debug.Log($"{rect.Size}, {rect.Size.Height / rect.Size.Width}");
                             float angle = rect.Angle;
                             // Debug.Log("Angle: " + rect.Angle);
                             // テスト用タブレットでやったら、角度がずれていた
@@ -499,10 +540,11 @@ namespace Kew
                 var bottomRight = new Point(topLeft.X + template.Width, topLeft.Y + template.Height);
                 var center = new Point((topLeft.X + bottomRight.X) / 2, (topLeft.Y + bottomRight.Y) / 2);
 
-                if (i == 0 ? maxVal > 5000000 : maxVal > 5000000)
+                if (i == 0 ? maxVal > 18000000 : maxVal > 5000000)
                 {
                     points.Add(center);
                     Cv2.Rectangle(src, topLeft, bottomRight, new Scalar(0, 0, 0), 2);
+                    // Debug.Log($"max value: {maxVal}, position: {maxLoc}");
                 }
                 else
                 {
@@ -511,7 +553,7 @@ namespace Kew
 
                 // debug
                 // Cv2.DrawContours(src, result, -1, new Scalar(i == 0 ? 255 : 0, i == 1 ? 255 : 0, i == 2 ? 255 : 0), 2);
-                Debug.Log($"max value: {maxVal}, position: {maxLoc}");
+                // Debug.Log($"max value: {maxVal}, position: {maxLoc}");
                 i++;
                 // }
             }
@@ -733,6 +775,7 @@ namespace Kew
             return numbers;
         }
 
+        private List<List<Tuple<int, float, float>>> preventResult = new List<List<Tuple<int, float, float>>>();
         public async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Texture2D> numberTexs, CancellationToken token)
         {
             var result = await OcrWithKnn(numberTexs, token);
@@ -742,13 +785,22 @@ namespace Kew
                 return null;
             }
 
-            if (result.Min(x => x.Item2 >= 0.7f) && result.Min(x => x.Item3 > 0.001))
+            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.0016)
             {
+                preventResult.Clear();
+                return result;
+            }
+            else if (preventResult.Count() >= 3 && preventResult.All(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) && result.Max(x => x.Item3) < 0.0019)
+            {
+                preventResult.Clear();
                 return result;
             }
             else
             {
                 Debug.Log("Discard Result : " + result.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
+                preventResult.Add(result);
+                if (preventResult.Count() > 3) preventResult = preventResult.GetRange(preventResult.Count() - 3, 3);
+                Debug.Log("preventResult: " + preventResult.Count());
                 return null;
             }
             // }
@@ -794,12 +846,13 @@ namespace Kew
 
                 // データから画像読み込み
                 var datas = ReadPng(path + num + ".png");
-                datas.Apply();
                 // Debug.Log(path + number + ".png");
                 if (datas == null)
                 {
                     Debug.LogError($"Cannot open file : {path + num + ".png"}");
+                    return null;
                 }
+                datas.Apply();
                 var pixels = datas.GetPixels();
 
                 numberData.Add(new Number(pixels, count));
@@ -808,7 +861,7 @@ namespace Kew
             return numberData;
         }
 
-
+        // 複数桁を同時に処理する
         private readonly int k = 10;
         public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Texture2D> tex2dlist, CancellationToken token)
         {
@@ -1091,14 +1144,14 @@ namespace Kew
         // }
 
         // test
-        public void DisplayMat(Mat src, int i)
+        public void DisplayMat(Mat src, int i, int width = 200)
         {
             Texture2D tex = new Texture2D(0, 0);
             tex = OpenCvSharp.Unity.MatToTexture(src);
 
             var target = imageObjList[i];
             target.sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(200, 200 * tex.height / tex.width);
+            target.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(width, width * tex.height / tex.width);
             target.gameObject.SetActive(true);
         }
 
