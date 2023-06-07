@@ -34,8 +34,8 @@ namespace Kew
             //     new OpenCvSharp.Rect(125, 245, 50, 50)
             // };            
             {
-                new OpenCvSharp.Rect(135, 65, 40, 40),
-                new OpenCvSharp.Rect(135, 252, 40, 40)
+                new OpenCvSharp.Rect(135, 65, 50, 50),
+                new OpenCvSharp.Rect(135, 252, 50, 50)
             };
 
         // 出力する数字画像の大きさ
@@ -128,8 +128,8 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(80 * scale, 45 * scale), new Point2f(image.Width * 0.5f - 68 * scale, image.Height * 0.5f + 41 * scale));
-                                Cv2.Resize(retval, retval, new Size(106, 60), interpolation: InterpolationFlags.Lanczos4); // 縦を60に合わせる
+                                retval = image.GetRectSubPix(new Size(90 * scale, 45 * scale), new Point2f(image.Width * 0.5f - 66 * scale, image.Height * 0.5f + 41 * scale));
+                                Cv2.Resize(retval, retval, new Size(120, 60), interpolation: InterpolationFlags.Lanczos4); // 縦を60に合わせる
                                 // Debug.Log("laplacian" + m.At<float>(0, 0));
                                 // Debug.Log("laplacian" + m.Reduce(ReduceDimension.Row, ReduceTypes.Sum, -1).Reduce(ReduceDimension.Column, ReduceTypes.Sum, -1).At<float>(0, 0));
                                 // m.Dispose();
@@ -248,7 +248,7 @@ namespace Kew
                     numList.Add(new Mat());
                     Cv2.GetRectSubPix(src, new Size(rect.Width, rect.Height), rect.Center, numList.Last());
                 }
-                else if (rect.Width < 50)
+                else if (rect.Width < 48)
                 {
                     // ふたつ(1含む）くっついている
                     numList.Add(new Mat());
@@ -286,7 +286,7 @@ namespace Kew
                 //     Cv2.GetRectSubPix(src, new Size(rect.Width * 2 / 5, rect.Height), new Point(rect.Right - rect.Width / 5, rect.Center.Y), numList.Last()); // みぎ
 
                 // }
-                else
+                else if (rect.Width < 108)
                 {
                     // みっつくっついてる
                     numList.Add(new Mat());
@@ -296,6 +296,18 @@ namespace Kew
                     numList.Add(new Mat());
                     Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Right - rect.Width / 6, rect.Center.Y), numList.Last()); // みぎ
 
+                }
+                else
+                {
+                    // 4つくっついてる
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 4, rect.Height), new Point(rect.Left + rect.Width / 8, rect.Center.Y), numList.Last()); // 左
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 4, rect.Height), new Point(rect.Center.X - rect.Width / 8, rect.Center.Y), numList.Last()); // 中央左
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 4, rect.Height), new Point(rect.Center.X + rect.Width / 8, rect.Center.Y), numList.Last()); // 中央みぎ
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 4, rect.Height), new Point(rect.Right - rect.Width / 8, rect.Center.Y), numList.Last()); // みぎ
                 }
 
                 // デバッグ用四角描写
