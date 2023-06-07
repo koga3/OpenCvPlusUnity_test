@@ -231,21 +231,30 @@ namespace Kew
             countours = countours.OrderBy(x => x[0].X).ToArray();
 
             List<Mat> numList = new List<Mat>();
+            List<Mat>[] numListArr = new List<Mat>[3];
             foreach (var points in countours)
             {
                 var rect = Cv2.BoundingRect(points);
-                // Debug.Log(rect);
-                if (!((9 < rect.Width && rect.Width < 90) && (30 < rect.Height && rect.Height < 46)))
+                // Debug.Log("rect: " + rect);
+                if (!(((23 < rect.Width && rect.Width < 90) && (30 < rect.Height && rect.Height < 46)) || ((11 < rect.Width && rect.Width < 19) && (33 < rect.Height && rect.Height < 43))))
                 {
                     continue;
                 }
-                // Debug.Log($"{rect.Width}, {rect.Height}");
+                Debug.Log($"rect {rect.Width}, {rect.Height}");
 
                 // 数字ごとに分割する
-                if (rect.Width < 50)
+                if (rect.Width < 40)
                 {
                     numList.Add(new Mat());
                     Cv2.GetRectSubPix(src, new Size(rect.Width, rect.Height), rect.Center, numList.Last());
+                }
+                else if (rect.Width < 50)
+                {
+                    // ふたつ(1含む）くっついている
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), new Point(rect.Left + rect.Width / 6, rect.Center.Y), numList.Last()); // 左
+                    numList.Add(new Mat());
+                    Cv2.GetRectSubPix(src, new Size(rect.Width * 2 / 3, rect.Height), new Point(rect.Right - rect.Width / 3, rect.Center.Y), numList.Last()); // みぎ
                 }
                 else if (rect.Width < 75)
                 {
@@ -255,6 +264,28 @@ namespace Kew
                     numList.Add(new Mat());
                     Cv2.GetRectSubPix(src, new Size(rect.Width / 2, rect.Height), new Point(rect.Right - rect.Width / 4, rect.Center.Y), numList.Last()); // みぎ
                 }
+                // else if(rect.Width < 75)
+                // {
+                //     // 三つ(1をふたつ含む)
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width / 4, rect.Height), new Point(rect.Left + rect.Width / 6, rect.Center.Y), numList.Last()); // 左
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width / 3, rect.Height), rect.Center, numList.Last()); // 中央
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width * 2 / 3, rect.Height), new Point(rect.Right - rect.Width / 3, rect.Center.Y), numList.Last()); // みぎ
+
+                // }
+                // else if (rect.Width < 80)
+                // {
+                //     // 三つ(1をひとつ含む)
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width / 5, rect.Height), new Point(rect.Left + rect.Width / 10, rect.Center.Y), numList.Last()); // 左
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width * 2 / 5, rect.Height), new Point(rect.Right - rect.Width * 3 / 5, rect.Center.Y), numList.Last()); // 中央
+                //     numList.Add(new Mat());
+                //     Cv2.GetRectSubPix(src, new Size(rect.Width * 2 / 5, rect.Height), new Point(rect.Right - rect.Width / 5, rect.Center.Y), numList.Last()); // みぎ
+
+                // }
                 else
                 {
                     // みっつくっついてる
@@ -288,7 +319,10 @@ namespace Kew
                     Cv2.Resize(numList[i], numList[i], Size.Zero, scale, scale);
                     numList[i] = Overlay(numList[i], new Size(numberWidth, numberHeight));
                 }
-                DisplayMat(numList[0], 3, 10);
+                if (numList.Count() >= 1)
+                {
+                    DisplayMat(numList[0], 3, 10);
+                }
             }
             List<Texture2D> numTexList = new List<Texture2D>();
             foreach (var mat in numList)
@@ -785,12 +819,12 @@ namespace Kew
                 return null;
             }
 
-            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.0016)
+            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.00175)
             {
                 preventResult.Clear();
                 return result;
             }
-            else if (preventResult.Count() >= 3 && preventResult.All(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) && result.Max(x => x.Item3) < 0.0019)
+            else if (preventResult.Count() >= 2 && preventResult.Count(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) >= 2 && result.Max(x => x.Item3) < 0.0019)
             {
                 preventResult.Clear();
                 return result;

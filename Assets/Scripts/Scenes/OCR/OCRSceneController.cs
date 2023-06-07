@@ -149,7 +149,15 @@ namespace Kew
                 }
                 if (display != null)
                 {
-                    recognized.Value = await util.RecognizeNumbers(display, isShowRecognizedNumber.isOn, token);
+                    ditectedCnt++;
+                    if (ditectedCnt > 2)
+                    {
+                        recognized.Value = await util.RecognizeNumbers(display, isShowRecognizedNumber.isOn, token);
+                    }
+                }
+                else
+                {
+                    ditectedCnt = 0;
                 }
                 isInProgress = false;
             });
@@ -228,6 +236,7 @@ namespace Kew
             // }
         }
 
+        private int ditectedCnt = 0;
         private async UniTaskVoid SetMatsRutine(CancellationToken token)
         {
             while (true)
