@@ -24,11 +24,11 @@ namespace OpenCvSharp
 
         public const string DllVCRuntime = "vcruntime140";
         public const string DllMsvcp = "msvcp140";
-//UFIX
-#if !UNITY_EDITOR && UNITY_IOS 
+        //UFIX
+#if !UNITY_EDITOR && UNITY_IOS
 		public const string DllExtern = "__Internal";
 #else
-		public const string DllExtern = "OpenCvSharpExtern";
+        public const string DllExtern = "OpenCvSharpExtern";
 #endif
         public const string Version = "320";
 
@@ -45,12 +45,12 @@ namespace OpenCvSharp
 
         public const string DllFfmpegX86 = "opencv_ffmpeg" + Version;
         public const string DllFfmpegX64 = DllFfmpegX86 + "_64";
-        
+
         /// <summary>
         /// Static constructor
         /// </summary>
-		#pragma warning disable 0618
-		[SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.UnmanagedCode)]
+#pragma warning disable 0618
+        [SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         static NativeMethods()
         {
             LoadLibraries(WindowsLibraryLoader.Instance.AdditionalPaths);
@@ -58,7 +58,22 @@ namespace OpenCvSharp
             // call cv to enable redirecting 
             TryPInvoke();
         }
-		#pragma warning restore 0618
+
+
+#pragma warning disable CA1801
+        public static void HandleException(ExceptionStatus status)
+        {
+#if DOTNETCORE
+        // Check if there has been an exception
+        if (status == ExceptionStatus.Occurred /*&& IsUnix()*/) // thrown can be 1 when unix 
+        {
+            ExceptionHandler.ThrowPossibleException();
+        }
+#else
+#endif
+        }
+
+#pragma warning restore 0618
         /// <summary>
         /// Load DLL files dynamically using Win32 LoadLibrary
         /// </summary>
@@ -69,9 +84,9 @@ namespace OpenCvSharp
                 return;
 
             string[] ap = EnumerableEx.ToArray(additionalPaths);
-            List<string> runtimePaths = new List<string> (ap);
+            List<string> runtimePaths = new List<string>(ap);
             runtimePaths.Add(Environment.GetFolderPath(Environment.SpecialFolder.System));
-            
+
             foreach (string dll in RuntimeDllNames)
             {
                 WindowsLibraryLoader.Instance.LoadLibrary(dll, runtimePaths);
@@ -117,10 +132,10 @@ namespace OpenCvSharp
             catch (DllNotFoundException e)
             {
                 var exception = PInvokeHelper.CreateException(e);
-                try{Console.WriteLine(exception.Message);}
-                catch{}
-                try{Debug.WriteLine(exception.Message);}
-                catch{}
+                try { Console.WriteLine(exception.Message); }
+                catch { }
+                try { Debug.WriteLine(exception.Message); }
+                catch { }
                 throw exception;
             }
             catch (BadImageFormatException e)
@@ -135,10 +150,10 @@ namespace OpenCvSharp
             catch (Exception e)
             {
                 Exception ex = e.InnerException ?? e;
-                try{ Console.WriteLine(ex.Message); }
-                catch{}
-                try{ Debug.WriteLine(ex.Message); }
-                catch{}
+                try { Console.WriteLine(ex.Message); }
+                catch { }
+                try { Debug.WriteLine(ex.Message); }
+                catch { }
                 throw;
             }
         }
@@ -178,7 +193,7 @@ namespace OpenCvSharp
         /// Custom error handler to be thrown by OpenCV
         /// </summary>
         public static readonly CvErrorCallback ErrorHandlerThrowException =
-            delegate(ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata)
+            delegate (ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata)
             {
                 try
                 {
@@ -195,7 +210,7 @@ namespace OpenCvSharp
         /// Custom error handler to ignore all OpenCV errors
         /// </summary>
         public static readonly CvErrorCallback ErrorHandlerIgnorance =
-            delegate(ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata)
+            delegate (ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata)
             {
                 //cvSetErrStatus(CvStatus.StsOk);
                 return 0;
