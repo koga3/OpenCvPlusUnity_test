@@ -128,8 +128,8 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(90 * scale, 38 * scale), new Point2f(image.Width * 0.5f - 70 * scale, image.Height * 0.5f + 41 * scale));
-                                Cv2.Resize(retval, retval, new Size(118, 50), interpolation: InterpolationFlags.Lanczos4); // 縦を50に合わせる
+                                retval = image.GetRectSubPix(new Size(80 * scale, 45 * scale), new Point2f(image.Width * 0.5f - 68 * scale, image.Height * 0.5f + 41 * scale));
+                                Cv2.Resize(retval, retval, new Size(106, 60), interpolation: InterpolationFlags.Lanczos4); // 縦を60に合わせる
                                 // Debug.Log("laplacian" + m.At<float>(0, 0));
                                 // Debug.Log("laplacian" + m.Reduce(ReduceDimension.Row, ReduceTypes.Sum, -1).Reduce(ReduceDimension.Column, ReduceTypes.Sum, -1).At<float>(0, 0));
                                 // m.Dispose();
@@ -153,10 +153,10 @@ namespace Kew
                         i++;
 
                         // test
-                        Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
-                        Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
-                        Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
-                        Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
+                        // Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
+                        // Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
+                        // Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
+                        // Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
                     }
                 }
             }, cancellationToken: token);
