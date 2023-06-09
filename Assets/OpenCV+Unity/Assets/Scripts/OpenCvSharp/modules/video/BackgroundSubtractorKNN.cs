@@ -12,215 +12,234 @@ namespace OpenCvSharp
         /// <summary>
         /// cv::Ptr&lt;T&gt;
         /// </summary>
-        private Ptr<BackgroundSubtractorKNN> objectPtr;
-        /// <summary>
-        /// 
-        /// </summary>
-        private bool disposed;
+        private Ptr? objectPtr;
 
         #region Init & Disposal
 
         /// <summary>
-        /// 
+        /// Creates KNN Background Subtractor
         /// </summary>
-        /// <param name="history"></param>
-        /// <param name="dist2Threshold"></param>
-        /// <param name="detectShadows"></param>
+        /// <param name="history">Length of the history.</param>
+        /// <param name="dist2Threshold">Threshold on the squared distance between the pixel and the sample to decide
+        /// whether a pixel is close to that sample. This parameter does not affect the background update.</param>
+        /// <param name="detectShadows">If true, the algorithm will detect shadows and mark them. It decreases the
+        /// speed a bit, so if you do not need this feature, set the parameter to false.</param>
         /// <returns></returns>
         public static BackgroundSubtractorKNN Create(
-            int history=500, double dist2Threshold=400.0, bool detectShadows=true)
+            int history = 500, double dist2Threshold = 400.0, bool detectShadows = true)
         {
-            IntPtr ptr = NativeMethods.video_createBackgroundSubtractorKNN(
-                history, dist2Threshold, detectShadows ? 1 : 0);
+            NativeMethods.HandleException(
+                NativeMethods.video_createBackgroundSubtractorKNN(
+                    history, dist2Threshold, detectShadows ? 1 : 0, out var ptr));
             return new BackgroundSubtractorKNN(ptr);
         }
 
         internal BackgroundSubtractorKNN(IntPtr ptr)
         {
-            this.objectPtr = new Ptr<BackgroundSubtractorKNN>(ptr);
+            objectPtr = new Ptr(ptr);
             this.ptr = objectPtr.Get(); 
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {
-                    }
-                    if (IsEnabledDispose)
-                    {
-                        if (objectPtr != null)
-                        {
-                            objectPtr.Dispose();
-                        }
-                        objectPtr = null;
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            objectPtr?.Dispose();
+            objectPtr = null;
+            base.DisposeManaged();
         }
+
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// 
+        /// Gets or sets the number of last frames that affect the background model.
         /// </summary>
         public int History
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getHistory(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getHistory(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setHistory(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setHistory(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the number of data samples in the background model
         /// </summary>
         public int NSamples
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getNSamples(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getNSamples(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setNSamples(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setNSamples(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the threshold on the squared distance between the pixel and the sample.
+        /// The threshold on the squared distance between the pixel and the sample to decide whether a pixel is close to a data sample.
         /// </summary>
         public double Dist2Threshold
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getDist2Threshold(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getDist2Threshold(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setDist2Threshold(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setDist2Threshold(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Returns the number of neighbours, the k in the kNN.
+        /// K is the number of samples that need to be within dist2Threshold in order to decide that that
+        /// pixel is matching the kNN background model.
         /// </summary>
         public int KNNSamples
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getkNNSamples(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getkNNSamples(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setkNNSamples(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setkNNSamples(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Returns the shadow detection flag.
+        /// If true, the algorithm detects shadows and marks them. See createBackgroundSubtractorKNN for details.
         /// </summary>
         public bool DetectShadows
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getDetectShadows(ptr) != 0;
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getDetectShadows(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret != 0;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setDetectShadows(ptr, value ? 1 : 0);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setDetectShadows(ptr, value ? 1 : 0));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the shadow value.
+        /// Shadow value is the value used to mark shadows in the foreground mask. Default value is 127.
+        /// Value 0 in the mask always means background, 255 means foreground.
         /// </summary>
         public int ShadowValue
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getShadowValue(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getShadowValue(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setShadowValue(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setShadowValue(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the shadow threshold.
+        /// A shadow is detected if pixel is a darker version of the background. The shadow threshold (Tau in
+        /// the paper) is a threshold defining how much darker the shadow can be. Tau= 0.5 means that if a pixel
+        /// is more than twice darker then it is not shadow. See Prati, Mikic, Trivedi and Cucchiara,
+        /// *Detecting Moving Shadows...*, IEEE PAMI,2003.
         /// </summary>
         public double ShadowThreshold
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorKNN_getShadowThreshold(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_getShadowThreshold(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorKNN_setShadowThreshold(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorKNN_setShadowThreshold(ptr, value));
+                GC.KeepAlive(this);
             }
         }
-        
+
         #endregion
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.video_Ptr_BackgroundSubtractorKNN_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.video_Ptr_BackgroundSubtractorKNN_delete(ptr));
+                base.DisposeUnmanaged();
+            }
+        }
     }
 }

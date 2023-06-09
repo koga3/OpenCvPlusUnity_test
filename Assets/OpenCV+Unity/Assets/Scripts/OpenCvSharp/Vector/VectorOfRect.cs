@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using OpenCvSharp.Util;
 
 namespace OpenCvSharp
@@ -7,15 +9,8 @@ namespace OpenCvSharp
     /// <summary>
     /// 
     /// </summary>
-    internal class VectorOfRect : DisposableCvObject, IStdVector<Rect>
+    public class VectorOfRect : DisposableCvObject, IStdVector<Rect>
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed = false;
-
-        #region Init and Dispose
-
         /// <summary>
         /// 
         /// </summary>
@@ -31,7 +26,7 @@ namespace OpenCvSharp
         public VectorOfRect(int size)
         {
             if (size < 0)
-                throw new ArgumentOutOfRangeException("nameof(size)");
+                throw new ArgumentOutOfRangeException(nameof(size));
             ptr = NativeMethods.vector_Rect_new2(new IntPtr(size));
         }
 
@@ -42,47 +37,31 @@ namespace OpenCvSharp
         public VectorOfRect(IEnumerable<Rect> data)
         {
             if (data == null)
-                throw new ArgumentNullException("nameof(data)");
-            Rect[] array = EnumerableEx.ToArray(data);
+                throw new ArgumentNullException(nameof(data));
+            var array = data.ToArray();
             ptr = NativeMethods.vector_Rect_new3(array, new IntPtr(array.Length));
         }
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-        protected override void Dispose(bool disposing)
+        protected override void DisposeUnmanaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (IsEnabledDispose)
-                    {
-                        NativeMethods.vector_Rect_delete(ptr);
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.vector_Rect_delete(ptr);
+            base.DisposeUnmanaged();
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// vector.size()
         /// </summary>
         public int Size
         {
-            get { return NativeMethods.vector_Rect_getSize(ptr).ToInt32(); }
+            get
+            {
+                var res = NativeMethods.vector_Rect_getSize(ptr).ToInt32();
+                GC.KeepAlive(this);
+                return res;
+            }
         }
 
         /// <summary>
@@ -90,12 +69,13 @@ namespace OpenCvSharp
         /// </summary>
         public IntPtr ElemPtr
         {
-            get { return NativeMethods.vector_Rect_getPointer(ptr); }
+            get
+            {
+                var res = NativeMethods.vector_Rect_getPointer(ptr);
+                GC.KeepAlive(this);
+                return res;
+            }
         }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Converts std::vector to managed array
@@ -103,19 +83,19 @@ namespace OpenCvSharp
         /// <returns></returns>
         public Rect[] ToArray()
         {
-            int size = Size;
+            var size = Size;
             if (size == 0)
             {
-                return new Rect[0];
+                return Array.Empty<Rect>();
             }
-            Rect[] dst = new Rect[size];
-            using (ArrayAddress1<Rect> dstPtr = new ArrayAddress1<Rect>(dst))
+            var dst = new Rect[size];
+            using (var dstPtr = new ArrayAddress1<Rect>(dst))
             {
-                Util.Utility.CopyMemory(dstPtr, ElemPtr, Rect.SizeOf*dst.Length);
+                MemoryHelper.CopyMemory(dstPtr.Pointer, ElemPtr, Marshal.SizeOf<Rect>() * dst.Length);
             }
+            GC.KeepAlive(this); // ElemPtr is IntPtr to memory held by this object, so
+                                // make sure we are not disposed until finished with copy.
             return dst;
         }
-
-        #endregion
     }
 }

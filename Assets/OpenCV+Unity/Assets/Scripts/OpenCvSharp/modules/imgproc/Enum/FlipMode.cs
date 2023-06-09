@@ -3,19 +3,19 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// 配列の反転方法
-	/// </summary>
+    /// 配列の反転方法
+    /// </summary>
 #else
     /// <summary>
     /// Specifies how to flip the array
     /// </summary>
 #endif
-    public enum FlipMode : int
+    public enum FlipMode
     {
 #if LANG_JP
-		/// <summary>
-		/// x軸周りでの反転
-		/// </summary>
+        /// <summary>
+        /// x軸周りでの反転
+        /// </summary>
 #else
         /// <summary>
         /// means flipping around x-axis
@@ -25,9 +25,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// y軸周りでの反転
-		/// </summary>
+        /// <summary>
+        /// y軸周りでの反転
+        /// </summary>
 #else
         /// <summary>
         /// means flipping around y-axis
@@ -37,14 +37,15 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// 両軸周りでの反転
-		/// </summary>
+        /// <summary>
+        /// 両軸周りでの反転
+        /// </summary>
 #else
         /// <summary>
         /// means flipping around both axises
         /// </summary>
 #endif
+        // ReSharper disable once InconsistentNaming
         XY = -1
     }
 }

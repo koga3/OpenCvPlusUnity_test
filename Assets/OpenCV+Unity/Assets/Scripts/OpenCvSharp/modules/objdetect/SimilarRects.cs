@@ -4,12 +4,11 @@
 
 namespace OpenCvSharp
 {
-
     /// <summary>
     /// Class for grouping object candidates, detected by Cascade Classifier, HOG etc.
     /// instance of the class is to be passed to cv::partition (see cxoperations.hpp)
     /// </summary>
-    public static class SimilarRects
+    public static class SimilarRects 
     {
         /// <summary>
         /// 
@@ -27,4 +26,5 @@ namespace OpenCvSharp
                    Math.Abs(r1.Y + r1.Height - r2.Y - r2.Height) <= delta;
         }
     }
+
 }

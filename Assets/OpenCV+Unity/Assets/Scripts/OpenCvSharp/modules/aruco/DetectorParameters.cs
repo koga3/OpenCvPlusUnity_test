@@ -1,58 +1,37 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace OpenCvSharp.Aruco
 {
     /// <summary>
     /// Parameters for the detectMarker process
     /// </summary>
-    public class DetectorParameters : DisposableCvObject
+    public class DetectorParameters
     {
-        /// <summary>
-        /// cv::Ptr&lt;T&gt;
-        /// </summary>
-		internal Ptr<DetectorParameters> ptrObj;
+        internal NativeStruct Native;
 
-
-        #region Init & Disposal
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected DetectorParameters(IntPtr p)
+        private DetectorParameters(NativeStruct native)
         {
-			ptrObj = new Ptr<DetectorParameters>(p);
-			ptr = ptrObj.Get();
+            Native = native;
         }
 
-        /// <summary>
-        /// 
+        /// <summary> 
         /// </summary>
         /// <returns></returns>
         public static DetectorParameters Create()
         {
-            var param = NativeMethods.aruco_DetectorParameters_create();
-            return new DetectorParameters(param);
+            NativeMethods.HandleException(
+                NativeMethods.aruco_DetectorParameters_create(out var native));
+            return new DetectorParameters(native);
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// minimum window size for adaptive thresholding before finding contours (default 3).
         /// </summary>
         public int AdaptiveThreshWinSizeMin
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getAdaptiveThreshWinSizeMin(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setAdaptiveThreshWinSizeMin(ptr, value);
-            }
+            get => Native.adaptiveThreshWinSizeMin;
+            set => Native.adaptiveThreshWinSizeMin = value;
         }
 
         /// <summary>
@@ -60,16 +39,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int AdaptiveThreshWinSizeMax
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getAdaptiveThreshWinSizeMax(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setAdaptiveThreshWinSizeMax(ptr, value);
-            }
+            get => Native.adaptiveThreshWinSizeMax;
+            set => Native.adaptiveThreshWinSizeMax = value;
         }
 
         /// <summary>
@@ -77,16 +48,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int AdaptiveThreshWinSizeStep
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getAdaptiveThreshWinSizeStep(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setAdaptiveThreshWinSizeStep(ptr, value);
-            }
+            get => Native.adaptiveThreshWinSizeStep;
+            set => Native.adaptiveThreshWinSizeStep = value;
         }
 
         /// <summary>
@@ -94,16 +57,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double AdaptiveThreshConstant
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getAdaptiveThreshConstant(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setAdaptiveThreshConstant(ptr, value);
-            }
+            get => Native.adaptiveThreshConstant;
+            set => Native.adaptiveThreshConstant = value;
         }
 
         /// <summary>
@@ -112,16 +67,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double MinMarkerPerimeterRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMinMarkerPerimeterRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMinMarkerPerimeterRate(ptr, value);
-            }
+            get => Native.minMarkerPerimeterRate;
+            set => Native.minMarkerPerimeterRate = value;
         }
 
         /// <summary>
@@ -130,16 +77,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double MaxMarkerPerimeterRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMaxMarkerPerimeterRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMaxMarkerPerimeterRate(ptr, value);
-            }
+            get => Native.maxMarkerPerimeterRate;
+            set => Native.maxMarkerPerimeterRate = value;
         }
 
         /// <summary>
@@ -147,16 +86,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double PolygonalApproxAccuracyRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getPolygonalApproxAccuracyRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setPolygonalApproxAccuracyRate(ptr, value);
-            }
+            get => Native.polygonalApproxAccuracyRate;
+            set => Native.polygonalApproxAccuracyRate = value;
         }
 
         /// <summary>
@@ -164,16 +95,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double MinCornerDistanceRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMinCornerDistanceRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMinCornerDistanceRate(ptr, value);
-            }
+            get => Native.minCornerDistanceRate;
+            set => Native.minCornerDistanceRate = value;
         }
 
         /// <summary>
@@ -181,51 +104,28 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int MinDistanceToBorder
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMinDistanceToBorder(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMinDistanceToBorder(ptr, value);
-            }
+            get => Native.minDistanceToBorder;
+            set => Native.minDistanceToBorder = value;
         }
 
         /// <summary>
-        /// minimum mean distance beetween two marker corners to be considered similar, 
+        /// minimum mean distance between two marker corners to be considered similar, 
         /// so that the smaller one is removed.The rate is relative to the smaller perimeter of the two markers(default 0.05).
         /// </summary>
         public double MinMarkerDistanceRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMinMarkerDistanceRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMinMarkerDistanceRate(ptr, value);
-            }
+            get => Native.minMarkerDistanceRate;
+            set => Native.minMarkerDistanceRate = value;
         }
 
         /// <summary>
-        /// do subpixel refinement or not
+        /// corner refinement method.
+        /// (CORNER_REFINE_NONE, no refinement. CORNER_REFINE_SUBPIX, do subpixel refinement. CORNER_REFINE_CONTOUR use contour-Points)
         /// </summary>
-        public bool DoCornerRefinement
+        public CornerRefineMethod CornerRefinementMethod
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getDoCornerRefinement(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setDoCornerRefinement(ptr, value);
-            }
+            get => (CornerRefineMethod)Native.cornerRefinementMethod;
+            set => Native.cornerRefinementMethod = (int)value;
         }
 
         /// <summary>
@@ -233,16 +133,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int CornerRefinementWinSize
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getCornerRefinementWinSize(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setCornerRefinementWinSize(ptr, value);
-            }
+            get => Native.cornerRefinementWinSize;
+            set => Native.cornerRefinementWinSize = value;
         }
 
         /// <summary>
@@ -250,33 +142,17 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int CornerRefinementMaxIterations
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getCornerRefinementMaxIterations(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setCornerRefinementMaxIterations(ptr, value);
-            }
+            get => Native.cornerRefinementMaxIterations;
+            set => Native.cornerRefinementMaxIterations = value;
         }
 
         /// <summary>
-        /// minimum error for the stop cristeria of the corner refinement process(default: 0.1)
+        /// minimum error for the stop criteria of the corner refinement process(default: 0.1)
         /// </summary>
         public double CornerRefinementMinAccuracy
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getCornerRefinementMinAccuracy(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setCornerRefinementMinAccuracy(ptr, value);
-            }
+            get => Native.cornerRefinementMinAccuracy;
+            set => Native.cornerRefinementMinAccuracy = value;
         }
 
         /// <summary>
@@ -284,16 +160,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int MarkerBorderBits
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMarkerBorderBits(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMarkerBorderBits(ptr, value);
-            }
+            get => Native.markerBorderBits;
+            set => Native.markerBorderBits = value;
         }
 
         /// <summary>
@@ -301,35 +169,19 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public int PerspectiveRemovePixelPerCell
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getPerspectiveRemovePixelPerCell(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setPerspectiveRemovePixelPerCell(ptr, value);
-            }
+            get => Native.perspectiveRemovePixelPerCell;
+            set => Native.perspectiveRemovePixelPerCell = value;
         }
 
         /// <summary>
         /// width of the margin of pixels on each cell not considered for the determination 
         /// of the cell bit.Represents the rate respect to the total  size of the cell, 
-        /// i.e.perpectiveRemovePixelPerCell (default 0.13)
+        /// i.e. perspectiveRemovePixelPerCell (default 0.13)
         /// </summary>
         public double PerspectiveRemoveIgnoredMarginPerCell
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getPerspectiveRemoveIgnoredMarginPerCell(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setPerspectiveRemoveIgnoredMarginPerCell(ptr, value);
-            }
+            get => Native.perspectiveRemoveIgnoredMarginPerCell;
+            set => Native.perspectiveRemoveIgnoredMarginPerCell = value;
         }
 
         /// <summary>
@@ -339,16 +191,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double MaxErroneousBitsInBorderRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMaxErroneousBitsInBorderRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMaxErroneousBitsInBorderRate(ptr, value);
-            }
+            get => Native.maxErroneousBitsInBorderRate;
+            set => Native.maxErroneousBitsInBorderRate = value;
         }
 
         /// <summary>
@@ -357,16 +201,8 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double MinOtsuStdDev
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getMinOtsuStdDev(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setMinOtsuStdDev(ptr, value);
-            }
+            get => Native.minOtsuStdDev;
+            set => Native.minOtsuStdDev = value;
         }
 
         /// <summary>
@@ -374,19 +210,131 @@ namespace OpenCvSharp.Aruco
         /// </summary>
         public double ErrorCorrectionRate
         {
-            get
-            {
-                ThrowIfDisposed();
-                return NativeMethods.aruco_DetectorParameters_getErrorCorrectionRate(ptr);
-            }
-            set
-            {
-                ThrowIfDisposed();
-                NativeMethods.aruco_DetectorParameters_setErrorCorrectionRate(ptr, value);
-            }
+            get => Native.errorCorrectionRate;
+            set => Native.errorCorrectionRate = value;
         }
 
-        #endregion
+        /// <summary>
+        /// Detection of quads can be done on a lower-resolution image, improving speed at a cost of pose accuracy and a slight decrease in detection rate.
+        /// Decoding the binary payload is still done at full resolution.
+        /// </summary>
+        public float AprilTagQuadDecimate
+        {
+            get => Native.aprilTagQuadDecimate;
+            set => Native.aprilTagQuadDecimate = value;
+        }
 
+        /// <summary>
+        /// What Gaussian blur should be applied to the segmented image (used for quad detection?) Parameter is the standard deviation in pixels.
+        /// Very noisy images benefit from non-zero values (e.g. 0.8).
+        /// </summary>
+        public float AprilTagQuadSigma
+        {
+            get => Native.aprilTagQuadSigma;
+            set => Native.aprilTagQuadSigma = value;
+        }
+
+        /// <summary>
+        /// reject quads containing too few pixels.
+        /// </summary>
+        public int AprilTagMinClusterPixels
+        {
+            get => Native.aprilTagMinClusterPixels;
+            set => Native.aprilTagMinClusterPixels = value;
+        }
+
+        /// <summary>
+        /// how many corner candidates to consider when segmenting a group of pixels into a quad.
+        /// </summary>
+        public int AprilTagMaxNmaxima
+        {
+            get => Native.aprilTagMaxNmaxima;
+            set => Native.aprilTagMaxNmaxima = value;
+        }
+
+        /// <summary>
+        /// Reject quads where pairs of edges have angles that are close to straight or close to 180 degrees. Zero means that no quads are rejected. (In radians).
+        /// </summary>
+        public float AprilTagCriticalRad
+        {
+            get => Native.aprilTagCriticalRad;
+            set => Native.aprilTagCriticalRad = value;
+        }
+
+        /// <summary>
+        /// When fitting lines to the contours, what is the maximum mean squared error allowed?
+        /// This is useful in rejecting contours that are far from being quad shaped; rejecting these quads "early" saves expensive decoding processing.
+        /// </summary>
+        public float AprilTagMaxLineFitMse
+        {
+            get => Native.aprilTagMaxLineFitMse;
+            set => Native.aprilTagMaxLineFitMse = value;
+        }
+
+        /// <summary>
+        /// should the thresholded image be deglitched? Only useful for very noisy images
+        /// </summary>
+        public bool AprilTagDeglitch
+        {
+            get => Convert.ToBoolean(Native.aprilTagDeglitch);
+            set => Native.aprilTagDeglitch = Convert.ToInt32(value);
+        }
+
+        /// <summary>
+        /// When we build our model of black &amp; white pixels, we add an extra check that the white model must be (overall) brighter than the black model.
+        /// How much brighter? (in pixel values, [0,255]).
+        /// </summary>
+        public int AprilTagMinWhiteBlackDiff
+        {
+            get => Native.aprilTagMinWhiteBlackDiff;
+            set => Native.aprilTagMinWhiteBlackDiff = value;
+        }
+
+        /// <summary>
+        /// to check if there is a white marker. In order to generate a "white" marker just invert a normal marker by using a tilde, ~markerImage. (default false)
+        /// </summary>
+        public bool DetectInvertedMarker
+        {
+            get => Convert.ToBoolean(Native.detectInvertedMarker);
+            set => Native.detectInvertedMarker = Convert.ToInt32(value);
+        }
+
+#pragma warning disable CA1051
+#pragma warning disable 1591
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativeStruct
+        {
+            public int adaptiveThreshWinSizeMin;
+            public int adaptiveThreshWinSizeMax;
+            public int adaptiveThreshWinSizeStep;
+            public double adaptiveThreshConstant;
+            public double minMarkerPerimeterRate;
+            public double maxMarkerPerimeterRate;
+            public double polygonalApproxAccuracyRate;
+            public double minCornerDistanceRate;
+            public int minDistanceToBorder;
+            public double minMarkerDistanceRate;
+            public int cornerRefinementMethod;
+            public int cornerRefinementWinSize;
+            public int cornerRefinementMaxIterations;
+            public double cornerRefinementMinAccuracy;
+            public int markerBorderBits;
+            public int perspectiveRemovePixelPerCell;
+            public double perspectiveRemoveIgnoredMarginPerCell;
+            public double maxErroneousBitsInBorderRate;
+            public double minOtsuStdDev;
+            public double errorCorrectionRate;
+            public float aprilTagQuadDecimate;
+            public float aprilTagQuadSigma;
+            public int aprilTagMinClusterPixels;
+            public int aprilTagMaxNmaxima;
+            public float aprilTagCriticalRad;
+            public float aprilTagMaxLineFitMse;
+            public int aprilTagDeglitch;
+            public int aprilTagMinWhiteBlackDiff;
+            public int detectInvertedMarker;
+        }
+#pragma warning restore CA1051
+#pragma warning restore 1591
     }
 }

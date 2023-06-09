@@ -173,19 +173,19 @@ namespace OpenCvSharp
 #endif
         public Point3d PerpendicularFoot(double x, double y, double z)
         {
-            double xa = X1;
-            double ya = Y1;
-            double za = Z1;
-            double xb = X1 + Vx;
-            double yb = Y1 + Vy;
-            double zb = Z1 + Vz;
+            var xa = X1;
+            var ya = Y1;
+            var za = Z1;
+            var xb = X1 + Vx;
+            var yb = Y1 + Vy;
+            var zb = Z1 + Vz;
 
-            double k = ((x - xa)*(xb - xa) + (y - ya)*(yb - ya) + (z - za)*(zb - za))/
+            var k = ((x - xa)*(xb - xa) + (y - ya)*(yb - ya) + (z - za)*(zb - za))/
                        (Math.Pow(xb - xa, 2) + Math.Pow(yb - ya, 2) + Math.Pow(zb - za, 2));
 
-            double hx = k*xb+(1-k)*xa;
-            double hy = k*yb+(1-k)*ya;
-            double hz = k*zb+(1-k)*za;
+            var hx = k*xb+(1-k)*xa;
+            var hy = k*yb+(1-k)*ya;
+            var hz = k*zb+(1-k)*za;
             return new Point3d(hx, hy, hz);
         }
 
@@ -244,11 +244,11 @@ namespace OpenCvSharp
             var ap = new Point3d { X = p.X - a.X, Y = p.Y - a.Y, Z = p.Z - a.Z };
 
             // AB, APを外積 -> 平行四辺形Dの面積
-            double d = VectorLength(CrossProduct(ab, ap));
+            var d = VectorLength(CrossProduct(ab, ap));
             // AB間の距離
-            double l = VertexDistance(a, b);
+            var l = VertexDistance(a, b);
             // 平行四辺形の高さ(垂線)
-            double h = d / l;
+            var h = d / l;
             return h;
         }
 
@@ -258,7 +258,7 @@ namespace OpenCvSharp
         /// <param name="vl"></param>
         /// <param name="vr"></param>
         /// <returns></returns>
-        private Point3d CrossProduct(Point3d vl, Point3d vr)
+        private static Point3d CrossProduct(Point3d vl, Point3d vr)
         {
             var ret = new Point3d
                 {
@@ -268,22 +268,24 @@ namespace OpenCvSharp
                 };
             return ret;
         }
+
         /// <summary>
         /// ベクトルの長さ(原点からの距離)
         /// </summary>
         /// <param name="v"></param>
         /// <returns></returns>
-        private double VectorLength(Point3d v)
+        private static double VectorLength(Point3d v)
         {
             return Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
         }
+
         /// <summary>
         /// 2点間(2ベクトル)の距離
         /// </summary>
         /// <param name="p1"></param>
         /// <param name="p2"></param>
         /// <returns></returns>
-        private double VertexDistance(Point3d p1, Point3d p2)
+        private static double VertexDistance(Point3d p1, Point3d p2)
         {
             return Math.Sqrt((p2.X - p1.X) * (p2.X - p1.X) + 
                              (p2.Y - p1.Y) * (p2.Y - p1.Y) + 

@@ -14,193 +14,211 @@ namespace OpenCvSharp
         /// <summary>
         /// cv::Ptr&lt;T&gt;
         /// </summary>
-        private Ptr<BackgroundSubtractorMOG2> objectPtr;
-        /// <summary>
-        /// 
-        /// </summary>
-        private bool disposed;
+        private Ptr? objectPtr;
 
         #region Init & Disposal
 
         /// <summary>
-        /// 
+        /// Creates MOG2 Background Subtractor.
         /// </summary>
-        /// <param name="history"></param>
-        /// <param name="varThreshold"></param>
-        /// <param name="detectShadows"></param>
+        /// <param name="history">Length of the history.</param>
+        /// <param name="varThreshold">Threshold on the squared Mahalanobis distance between the pixel and the model
+        /// to decide whether a pixel is well described by the background model. This parameter does not affect the background update.</param>
+        /// <param name="detectShadows">If true, the algorithm will detect shadows and mark them. It decreases the speed a bit,
+        /// so if you do not need this feature, set the parameter to false.</param>
         /// <returns></returns>
         public static BackgroundSubtractorMOG2 Create(
             int history = 500, double varThreshold = 16, bool detectShadows = true)
         {
-            IntPtr ptr = NativeMethods.video_createBackgroundSubtractorMOG2(
-                history, varThreshold, detectShadows ? 1 : 0);
+            NativeMethods.HandleException(
+                NativeMethods.video_createBackgroundSubtractorMOG2(
+                    history, varThreshold, detectShadows ? 1 : 0, out var ptr));
             return new BackgroundSubtractorMOG2(ptr);
         }
 
         internal BackgroundSubtractorMOG2(IntPtr ptr)
         {
-            this.objectPtr = new Ptr<BackgroundSubtractorMOG2>(ptr);
+            objectPtr = new Ptr(ptr);
             this.ptr = objectPtr.Get(); 
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {
-                    }
-                    if (IsEnabledDispose)
-                    {
-                        if (objectPtr != null)
-                        {
-                            objectPtr.Dispose();
-                        }
-                        objectPtr = null;
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            objectPtr?.Dispose();
+            objectPtr = null;
+            ptr = IntPtr.Zero;
+            base.DisposeManaged();
         }
+
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// 
+        /// Gets or sets the number of last frames that affect the background model.
         /// </summary>
         public int History
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getHistory(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getHistory(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setHistory(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setHistory(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the number of gaussian components in the background model.
         /// </summary>
         public int NMixtures
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getNMixtures(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getNMixtures(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setNMixtures(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setNMixtures(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the "background ratio" parameter of the algorithm.
+        /// If a foreground pixel keeps semi-constant value for about backgroundRatio\*history frames, it's
+        /// considered background and added to the model as a center of a new component. It corresponds to TB
+        /// parameter in the paper.
         /// </summary>
         public double BackgroundRatio
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getBackgroundRatio(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getBackgroundRatio(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setBackgroundRatio(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setBackgroundRatio(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the variance threshold for the pixel-model match.
+        /// The main threshold on the squared Mahalanobis distance to decide if the sample is well described by
+        /// the background model or not. Related to Cthr from the paper.
         /// </summary>
         public double VarThreshold
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getHistory(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getVarThreshold(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setVarThreshold(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setVarThreshold(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the variance threshold for the pixel-model match used for new mixture component generation. 
+        /// Threshold for the squared Mahalanobis distance that helps decide when a sample is close to the
+        /// existing components (corresponds to Tg in the paper). If a pixel is not close to any component, it
+        /// is considered foreground or added as a new component. 3 sigma =\> Tg=3\*3=9 is default. A smaller Tg
+        /// value generates more components. A higher Tg value may result in a small number of components but they can grow too large.
         /// </summary>
         public double VarThresholdGen
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getVarThresholdGen(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getVarThresholdGen(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setVarThresholdGen(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setVarThresholdGen(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the initial variance of each gaussian component.
         /// </summary>
         public double VarInit
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getVarInit(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getVarInit(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setVarInit(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setVarInit(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -211,15 +229,22 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getVarMin(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getVarMin(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setVarMin(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setVarMin(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -230,95 +255,160 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getVarMax(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getVarMax(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setVarMax(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setVarMax(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the complexity reduction threshold.
+        /// This parameter defines the number of samples needed to accept to prove the component exists. CT=0.05 
+        /// is a default value for all the samples. By setting CT=0 you get an algorithm very similar to the standard Stauffer&amp;Grimson algorithm.
         /// </summary>
         public double ComplexityReductionThreshold
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getComplexityReductionThreshold(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getComplexityReductionThreshold(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setComplexityReductionThreshold(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setComplexityReductionThreshold(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the shadow detection flag.
+        /// If true, the algorithm detects shadows and marks them. See createBackgroundSubtractorKNN for details.
         /// </summary>
         public bool DetectShadows
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getDetectShadows(ptr) != 0;
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getDetectShadows(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret != 0;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setDetectShadows(ptr, value ? 1 : 0);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setDetectShadows(objectPtr.CvPtr, value ? 1 : 0));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the shadow value.
+        /// Shadow value is the value used to mark shadows in the foreground mask. Default value is 127.
+        /// Value 0 in the mask always means background, 255 means foreground.
         /// </summary>
         public int ShadowValue
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getShadowValue(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getShadowValue(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setShadowValue(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setShadowValue(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets the shadow threshold. 
+        /// A shadow is detected if pixel is a darker version of the background. The shadow threshold (Tau in
+        /// the paper) is a threshold defining how much darker the shadow can be. Tau= 0.5 means that if a pixel
+        /// is more than twice darker then it is not shadow. See Prati, Mikic, Trivedi and Cucchiara,
+        /// *Detecting Moving Shadows...*, IEEE PAMI,2003.
         /// </summary>
         public double ShadowThreshold
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.video_BackgroundSubtractorMOG2_getShadowThreshold(ptr);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_getShadowThreshold(objectPtr.CvPtr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.video_BackgroundSubtractorMOG2_setShadowThreshold(ptr, value);
+                ThrowIfDisposed();
+                if (objectPtr == null)
+                    throw new NotSupportedException("objectPtr == null");
+                NativeMethods.HandleException(
+                    NativeMethods.video_BackgroundSubtractorMOG2_setShadowThreshold(objectPtr.CvPtr, value));
+                GC.KeepAlive(this);
             }
         }
 
         #endregion
 
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.video_Ptr_BackgroundSubtractorMOG2_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.video_Ptr_BackgroundSubtractorMOG2_delete(ptr));
+                base.DisposeUnmanaged();
+            }
+        }
     }
 }

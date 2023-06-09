@@ -1,23 +1,22 @@
-﻿
-namespace OpenCvSharp
+﻿namespace OpenCvSharp
 {
     // ReSharper disable InconsistentNaming
 
 #if LANG_JP
     /// <summary>
-	/// cvCmp, cvCmpS等のメソッドで用いる, CvArrの比較方法
+    /// cvCmp, cvCmpS等のメソッドで用いる, CvArrの比較方法
     /// </summary>
 #else
     /// <summary>
     /// The flag specifying the relation between the elements to be checked
     /// </summary>
 #endif
-    public enum CmpTypes : int
+    public enum CmpTypes
     {
 #if LANG_JP
-		/// <summary>
-		/// src1(I) と value は等しい 
-		/// </summary>
+        /// <summary>
+        /// src1(I) と value は等しい 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "equal to" src2(I)
@@ -27,9 +26,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// src1(I) は value より大きい 
-		/// </summary>
+        /// <summary>
+        /// src1(I) は value より大きい 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "greater than" src2(I)
@@ -39,9 +38,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// src1(I) は value より大きいか等しい 
-		/// </summary>
+        /// <summary>
+        /// src1(I) は value より大きいか等しい 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "greater or equal" src2(I)
@@ -51,9 +50,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// src1(I) は value より小さい 
-		/// </summary>
+        /// <summary>
+        /// src1(I) は value より小さい 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "less than" src2(I)
@@ -63,9 +62,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// src1(I) は value より小さいか等しい 
-		/// </summary>
+        /// <summary>
+        /// src1(I) は value より小さいか等しい 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "less or equal" src2(I)
@@ -75,9 +74,9 @@ namespace OpenCvSharp
 
 
 #if LANG_JP
-		/// <summary>
-		/// src1(I) と value は等しくない 
-		/// </summary>
+        /// <summary>
+        /// src1(I) と value は等しくない 
+        /// </summary>
 #else
         /// <summary>
         /// src1(I) "not equal to" src2(I)

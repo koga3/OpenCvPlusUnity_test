@@ -11,33 +11,19 @@ namespace OpenCvSharp.XFeatures2D
     /// The "Star" Detector
     /// </summary>
 #endif
-    [Serializable]
     public class StarDetector : Feature2D
     {
-        private bool disposed;
-        private Ptr<StarDetector> ptrObj;
-
-        #region Init & Disposal
+        private Ptr? ptrObj;
 
         /// <summary>
         /// 
         /// </summary>
-        internal StarDetector(Ptr<StarDetector> p)
-			: base(p.Get())
+        internal StarDetector(IntPtr p)
         {
-			ptrObj = p;
+            ptrObj = new Ptr(p);
+            ptr = ptrObj.Get();
         }
 
-#if LANG_JP
-        /// <summary>
-        /// 初期化
-        /// </summary>
-        /// <param name="maxSize"></param>
-        /// <param name="responseThreshold"></param>
-        /// <param name="lineThresholdProjected"></param>
-        /// <param name="lineThresholdBinarized"></param>
-        /// <param name="suppressNonmaxSize"></param>
-#else
         /// <summary>
         /// Constructor
         /// </summary>
@@ -46,7 +32,6 @@ namespace OpenCvSharp.XFeatures2D
         /// <param name="lineThresholdProjected"></param>
         /// <param name="lineThresholdBinarized"></param>
         /// <param name="suppressNonmaxSize"></param>
-#endif
         public static StarDetector Create(
             int maxSize = 45, 
             int responseThreshold = 30, 
@@ -54,58 +39,43 @@ namespace OpenCvSharp.XFeatures2D
             int lineThresholdBinarized = 8,
             int suppressNonmaxSize = 5)
         {
-            IntPtr ptr = NativeMethods.xfeatures2d_StarDetector_create(
-                maxSize, responseThreshold, lineThresholdProjected, 
-                lineThresholdBinarized, suppressNonmaxSize);
-            return new StarDetector(new Ptr<StarDetector>(ptr));
+            NativeMethods.HandleException(
+                NativeMethods.xfeatures2d_StarDetector_create(
+                    maxSize, responseThreshold, lineThresholdProjected,
+                    lineThresholdBinarized, suppressNonmaxSize, out var ret));
+            return new StarDetector(ret);
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Releases the resources
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                            ptrObj = null;
-                        }
-                    }
-                    // releases unmanaged resources
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
+        }
 
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_StarDetector_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_StarDetector_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
-        #endregion
-
-        #region Methods
-
-        #endregion
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenCvSharp.Util
 {
@@ -9,20 +7,14 @@ namespace OpenCvSharp.Util
     /// </summary>
     public static class PInvokeHelper
     {
-#if LANG_JP
-        /// <summary>
-        /// PInvokeが正常に行えるかチェックする
-        /// </summary>
-#else
         /// <summary>
         /// Checks whether PInvoke functions can be called
         /// </summary>
-#endif
         public static void TryPInvoke()
         {
             try
             {
-                NativeMethods.core_Mat_sizeof();
+                var size = NativeMethods.core_Mat_sizeof();
             }
             catch (DllNotFoundException e)
             {
@@ -50,7 +42,7 @@ namespace OpenCvSharp.Util
         /// <param name="ex"></param>
         public static OpenCvSharpException CreateException(Exception ex)
         {
-            StringBuilder message = new StringBuilder();
+            /*StringBuilder message = new StringBuilder();
             if (System.Globalization.CultureInfo.CurrentCulture.Name.Contains("ja"))
             {
                 message.AppendFormat("{0}\n", ex.Message);
@@ -72,8 +64,9 @@ namespace OpenCvSharp.Util
                     .Append("(3) The target platform(x86/x64) of OpenCV's DLL files and OpenCvSharp is the same as your project's.\n")
                     .Append("\n")
                     .Append(ex.ToString());
-            }            
-            return new OpenCvSharpException(message.ToString(), ex);
+            }           
+            return new OpenCvSharpException(message.ToString(), ex);*/
+            return new OpenCvSharpException(ex.Message, ex);
         }
     }
 }

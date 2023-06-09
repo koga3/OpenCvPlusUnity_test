@@ -13,17 +13,11 @@ namespace OpenCvSharp
         /// <summary>
         /// 
         /// </summary>
-        protected FrameSource()
-        {
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <returns></returns>
-        public static FrameSource CreateEmptySource()
+        public static FrameSource CreateFrameSource_Empty()
         {
-            IntPtr ptr = NativeMethods.superres_createFrameSource_Empty();
+            NativeMethods.HandleException(
+                NativeMethods.superres_createFrameSource_Empty(out var ptr));
             return FrameSourceImpl.FromPtr(ptr);
         }
 
@@ -32,13 +26,15 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static FrameSource CreateVideoSource(string fileName)
+        public static FrameSource CreateFrameSource_Video(string fileName)
         {
-            if (String.IsNullOrEmpty("fileName"))
-                throw new ArgumentNullException("nameof(fileName)");
+            if (string.IsNullOrEmpty(fileName))
+                throw new ArgumentNullException(nameof(fileName));
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("", fileName);
-            IntPtr ptr = NativeMethods.superres_createFrameSource_Video(fileName);
+
+            NativeMethods.HandleException(
+                NativeMethods.superres_createFrameSource_Video(fileName, out var ptr));
             return FrameSourceImpl.FromPtr(ptr);
         }
 
@@ -47,13 +43,15 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static FrameSource CreateVideoSourceCuda(string fileName)
+        public static FrameSource CreateFrameSource_Video_CUDA(string fileName)
         {
-            if (String.IsNullOrEmpty("fileName"))
-                throw new ArgumentNullException("nameof(fileName)");
+            if (string.IsNullOrEmpty(fileName))
+                throw new ArgumentNullException(nameof(fileName));
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("", fileName);
-            IntPtr ptr = NativeMethods.superres_createFrameSource_Video_CUDA(fileName);
+
+            NativeMethods.HandleException(
+                NativeMethods.superres_createFrameSource_Video_CUDA(fileName, out var ptr));
             return FrameSourceImpl.FromPtr(ptr);
         }
 
@@ -62,9 +60,10 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="deviceId"></param>
         /// <returns></returns>
-        public static FrameSource CreateCameraSource(int deviceId)
+        public static FrameSource CreateFrameSource_Camera(int deviceId)
         {
-            IntPtr ptr = NativeMethods.superres_createFrameSource_Camera(deviceId);
+            NativeMethods.HandleException(
+                NativeMethods.superres_createFrameSource_Camera(deviceId, out var ptr));
             return FrameSourceImpl.FromPtr(ptr);
         }
 

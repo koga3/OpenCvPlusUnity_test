@@ -1,124 +1,155 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenCvSharp.Util;
+using System.Linq;
 
 namespace OpenCvSharp
 {
     // ReSharper disable once InconsistentNaming
 
-#if LANG_JP
-    /// <summary>
-    /// BRISK 実装
-    /// </summary>
-#else
     /// <summary>
     /// BRISK implementation
     /// </summary>
-#endif
+    // ReSharper disable once InconsistentNaming
     public class BRISK : Feature2D
     {
-        private bool disposed;
-        private Ptr<BRISK> ptrObj;
+        private Ptr? ptrObj;
 
-        #region Init & Disposal
         /// <summary>
-        /// 
+        /// </summary>
+        protected BRISK()
+        {
+        }
+
+        /// <summary>
+        /// Construct from native cv::Ptr&lt;T&gt;*
         /// </summary>
         /// <param name="p"></param>
-        internal BRISK(Ptr<BRISK> p)
-            : base(p.Get())
+        protected BRISK(IntPtr p)
         {
-			ptrObj = p;
+            ptrObj = new Ptr(p);
+            ptr = ptrObj.Get();
         }
 
         /// <summary>
-        /// 
+        /// The BRISK constructor
         /// </summary>
-        /// <param name="thresh"></param>
-        /// <param name="octaves"></param>
-        /// <param name="patternScale"></param>
+        /// <param name="thresh">AGAST detection threshold score.</param>
+        /// <param name="octaves">detection octaves. Use 0 to do single scale.</param>
+        /// <param name="patternScale">apply this scale to the pattern used for sampling the neighbourhood of a keypoint.</param>
         public static BRISK Create(int thresh = 30, int octaves = 3, float patternScale = 1.0f)
         {
-            IntPtr p = NativeMethods.features2d_BRISK_create1(thresh, octaves, patternScale);
-            return new BRISK(new Ptr<BRISK>(p));
+            NativeMethods.HandleException(
+                NativeMethods.features2d_BRISK_create1(thresh, octaves, patternScale, out var ptr));
+            return new BRISK(ptr);
         }
 
         /// <summary>
-        /// custom setup
+        /// The BRISK constructor for a custom pattern
         /// </summary>
-        /// <param name="radiusList"></param>
-        /// <param name="numberList"></param>
-        /// <param name="dMax"></param>
-        /// <param name="dMin"></param>
-        /// <param name="indexChange"></param>
+        /// <param name="radiusList">defines the radii (in pixels) where the samples around a keypoint are taken (for keypoint scale 1).</param>
+        /// <param name="numberList">defines the number of sampling points on the sampling circle. Must be the same size as radiusList..</param>
+        /// <param name="dMax">threshold for the short pairings used for descriptor formation (in pixels for keypoint scale 1).</param>
+        /// <param name="dMin">threshold for the long pairings used for orientation determination (in pixels for keypoint scale 1).</param>
+        /// <param name="indexChange">index remapping of the bits.</param>
         /// <returns></returns>
         public static BRISK Create(
-            IEnumerable<float> radiusList, IEnumerable<int> numberList,
-            float dMax = 5.85f, float dMin = 8.2f,
-            IEnumerable<int> indexChange = null)
+            IEnumerable<float> radiusList,
+            IEnumerable<int> numberList,
+            float dMax = 5.85f,
+            float dMin = 8.2f,
+            IEnumerable<int>? indexChange = null)
         {
             if (radiusList == null)
-                throw new ArgumentNullException("nameof(radiusList)");
+                throw new ArgumentNullException(nameof(radiusList));
             if (numberList == null)
-                throw new ArgumentNullException("nameof(numberList)");
-            float[] radiusListArray = EnumerableEx.ToArray(radiusList);
-            int[] numberListArray = EnumerableEx.ToArray(numberList);
-            int[] indexChangeArray = EnumerableEx.ToArray(indexChange);
+                throw new ArgumentNullException(nameof(numberList));
 
-            IntPtr p = NativeMethods.features2d_BRISK_create2(
+            var radiusListArray = radiusList.ToArray();
+            var numberListArray = numberList.ToArray();
+            var indexChangeArray = indexChange?.ToArray();
+
+            NativeMethods.HandleException(
+                NativeMethods.features2d_BRISK_create2(
                 radiusListArray, radiusListArray.Length,
                 numberListArray, numberListArray.Length,
                 dMax, dMin,
-                indexChangeArray, indexChangeArray.Length);
-            return new BRISK(new Ptr<BRISK>(p));
+                indexChangeArray, indexChangeArray?.Length ?? 0, 
+                out var ptr));
+
+            return new BRISK(ptr);
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Releases the resources
+        /// The BRISK constructor for a custom pattern, detection threshold and octaves
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        /// <param name="thresh">AGAST detection threshold score.</param>
+        /// <param name="octaves">detection octaves. Use 0 to do single scale.</param>
+        /// <param name="radiusList">defines the radii (in pixels) where the samples around a keypoint are taken (for keypoint scale 1).</param>
+        /// <param name="numberList">defines the number of sampling points on the sampling circle. Must be the same size as radiusList..</param>
+        /// <param name="dMax">threshold for the short pairings used for descriptor formation (in pixels for keypoint scale 1).</param>
+        /// <param name="dMin">threshold for the long pairings used for orientation determination (in pixels for keypoint scale 1).</param>
+        /// <param name="indexChange">index remapping of the bits.</param>
+        /// <returns></returns>
+        public static BRISK Create(
+            int thresh, 
+            int octaves, 
+            IEnumerable<float> radiusList,
+            IEnumerable<int> numberList,
+            float dMax = 5.85f,
+            float dMin = 8.2f,
+            IEnumerable<int>? indexChange = null)
         {
-            if (!disposed)
+            if (radiusList == null)
+                throw new ArgumentNullException(nameof(radiusList));
+            if (numberList == null)
+                throw new ArgumentNullException(nameof(numberList));
+
+            var radiusListArray = radiusList.ToArray();
+            var numberListArray = numberList.ToArray();
+            var indexChangeArray = indexChange?.ToArray();
+
+            NativeMethods.HandleException(
+                NativeMethods.features2d_BRISK_create3(
+                    thresh, octaves,
+                    radiusListArray, radiusListArray.Length,
+                    numberListArray, numberListArray.Length,
+                    dMax, dMin,
+                    indexChangeArray, indexChangeArray?.Length ?? 0, 
+                    out var ptr));
+
+            return new BRISK(ptr);
+        }
+
+        /// <summary>
+        /// Releases managed resources
+        /// </summary>
+        protected override void DisposeManaged()
+        {
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
+        }
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
             {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                        // releases unmanaged resources
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                            ptrObj = null;
-                        }
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.features2d_Ptr_BRISK_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.features2d_Ptr_BRISK_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
-
-        #endregion
-
-        #region Methods
-
-        #endregion
     }
 }

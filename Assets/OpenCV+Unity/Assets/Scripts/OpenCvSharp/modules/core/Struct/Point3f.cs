@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace OpenCvSharp
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
+    // ReSharper disable once InconsistentNaming
     public struct Point3f : IEquatable<Point3f>
     {
         /// <summary>
@@ -28,11 +31,6 @@ namespace OpenCvSharp
         /// <summary>
         /// 
         /// </summary>
-        public const int SizeOf = sizeof (float) + sizeof (float) + sizeof (float);
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="z"></param>
@@ -45,6 +43,26 @@ namespace OpenCvSharp
 
         #region Cast
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static explicit operator Point3i(Point3f self)
+        {
+            return new Point3i((int)self.X, (int)self.Y, (int)self.Z);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public static implicit operator Point3f(Point3i point)
+        {
+            return new Point3f(point.X, point.Y, point.Z);
+        }
+  
         /// <summary>
         /// 
         /// </summary>
@@ -70,25 +88,7 @@ namespace OpenCvSharp
         #region Operators
 
         #region == / !=
-
-#if LANG_JP
-    /// <summary>
-    /// 指定したオブジェクトと等しければtrueを返す 
-    /// </summary>
-    /// <param name="obj">比較するオブジェクト</param>
-    /// <returns>型が同じで、メンバの値が等しければtrue</returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public bool Equals(Point3f obj)
-        {
-            return (this.X == obj.X && this.Y == obj.Y && this.Z == obj.Z);
-        }
-
+        
 #if LANG_JP
     /// <summary>
     /// == 演算子のオーバーロード。x,y座標値が等しければtrueを返す 
@@ -235,56 +235,37 @@ namespace OpenCvSharp
 
         #region Override
 
-#if LANG_JP
-    /// <summary>
-    /// Equalsのオーバーライド
-    /// </summary>
-    /// <param name="obj">比較するオブジェクト</param>
-    /// <returns></returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public override bool Equals(object obj)
+        /// <inheritdoc />
+        public readonly bool Equals(Point3f other)
         {
-            return base.Equals(obj);
+            return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
+        }
+        
+        /// <inheritdoc />
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is Point3f other && Equals(other);
+        }
+        
+        /// <inheritdoc />
+        public override readonly int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = X.GetHashCode();
+                hashCode = (hashCode * 397) ^ Y.GetHashCode();
+                hashCode = (hashCode * 397) ^ Z.GetHashCode();
+                return hashCode;
+            }
         }
 
-#if LANG_JP
-    /// <summary>
-    /// GetHashCodeのオーバーライド
-    /// </summary>
-    /// <returns>このオブジェクトのハッシュ値を指定する整数値。</returns>
-#else
-        /// <summary>
-        /// Returns a hash code for this object.
-        /// </summary>
-        /// <returns>An integer value that specifies a hash value for this object.</returns>
-#endif
-        public override int GetHashCode()
+        /// <inheritdoc />
+        public override readonly string ToString()
         {
-            return X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode();
-        }
-
-#if LANG_JP
-    /// <summary>
-    /// 文字列形式を返す 
-    /// </summary>
-    /// <returns>文字列形式</returns>
-#else
-        /// <summary>
-        /// Converts this object to a human readable string.
-        /// </summary>
-        /// <returns>A string that represents this object.</returns>
-#endif
-        public override string ToString()
-        {
-            return string.Format("(x:{0} y:{1} z:{2})", X, Y, Z);
+            return $"(x:{X} y:{Y} z:{Z})";
         }
 
         #endregion
+
     }
 }

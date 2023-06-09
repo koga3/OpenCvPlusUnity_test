@@ -1,5 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.InteropServices;
+#if ENABLED_CUDA
+using OpenCvSharp.Cuda;
+#endif
 
 namespace OpenCvSharp
 {
@@ -8,20 +13,27 @@ namespace OpenCvSharp
     /// </summary>
     public class InputArray : DisposableCvObject
     {
-        private bool disposed;
-//UFIX Warning
-#pragma warning disable 0414
-		private object obj;
-#pragma warning restore 0414
+        enum HandleKind
+        {
+            Unknown,
+            Mat,
+            Scalar,
+            Double,
+        }
+
+        private object? obj;
+        private readonly IntPtr handle;
+        private readonly HandleKind handleKind;
 
 #pragma warning disable 1591
-// ReSharper disable InconsistentNaming
+        // ReSharper disable InconsistentNaming
         public const int KIND_SHIFT = 16;
         public const int KIND_MASK = ~(0x8000 << KIND_SHIFT | 0x4000 << KIND_SHIFT) - (1 << KIND_SHIFT) + 1;
-// ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
 #pragma warning restore 1591
 
         #region Init & Disposal
+
         /// <summary>
         /// 
         /// </summary>
@@ -29,7 +41,8 @@ namespace OpenCvSharp
         internal InputArray(IntPtr ptr)
         {
             this.ptr = ptr;
-            this.obj = null;
+            obj = null;
+            handleKind = HandleKind.Unknown;
         }
 
         /// <summary>
@@ -38,11 +51,15 @@ namespace OpenCvSharp
         /// <param name="mat"></param>
         internal InputArray(Mat mat)
         {
+            // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
             if (mat == null)
                 ptr = IntPtr.Zero;
             else
-                ptr = NativeMethods.core_InputArray_new_byMat(mat.CvPtr);
+                NativeMethods.HandleException(
+                    NativeMethods.core_InputArray_new_byMat(mat.CvPtr, out ptr));
+            GC.KeepAlive(mat);
             obj = mat;
+            handleKind = HandleKind.Mat;
         }
 
         /// <summary>
@@ -51,10 +68,13 @@ namespace OpenCvSharp
         /// <param name="expr"></param>
         internal InputArray(MatExpr expr)
         {
+            // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
             if (expr == null)
                 ptr = IntPtr.Zero;
             else
-                ptr = NativeMethods.core_InputArray_new_byMatExpr(expr.CvPtr);
+                NativeMethods.HandleException(
+                    NativeMethods.core_InputArray_new_byMatExpr(expr.CvPtr, out ptr));
+            GC.KeepAlive(expr);
             obj = null;
         }
 
@@ -64,7 +84,9 @@ namespace OpenCvSharp
         /// <param name="val"></param>
         internal InputArray(Scalar val)
         {
-            ptr = NativeMethods.core_InputArray_new_byScalar(val);
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_new_byScalar(val, out handle, out ptr));
+            handleKind = HandleKind.Scalar;
         }
 
         /// <summary>
@@ -73,7 +95,11 @@ namespace OpenCvSharp
         /// <param name="val"></param>
         internal InputArray(double val)
         {
-            ptr = NativeMethods.core_InputArray_new_byDouble(val);
+            handle = Marshal.AllocHGlobal(sizeof(double));
+            Marshal.StructureToPtr(val, handle, false);
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_new_byDouble(handle, out ptr));
+            handleKind = HandleKind.Double;
         }
 
         /// <summary>
@@ -83,119 +109,51 @@ namespace OpenCvSharp
         internal InputArray(IEnumerable<Mat> mat)
         {
             if (mat == null)
-                throw new ArgumentNullException("nameof(mat)");
-			var vec = new VectorOfMat(mat);
-			ptr = NativeMethods.core_InputArray_new_byVectorOfMat(vec.CvPtr);
-			obj = new object[] { mat, vec };
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="disposing"></param>
-        protected override void Dispose(bool disposing)
-        {
-            if (!disposed)
+                throw new ArgumentNullException(nameof(mat));
+            using (var matVector = new VectorOfMat(mat))
             {
-                try
-                {
-                    if (disposing)
-                    {
-                    }
-                    if (ptr != IntPtr.Zero)
-                    {
-                        NativeMethods.core_InputArray_delete(ptr);
-                        ptr = IntPtr.Zero;
-                    }
-                    obj = null;
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+                NativeMethods.HandleException(
+                    NativeMethods.core_InputArray_new_byVectorOfMat(matVector.CvPtr, out ptr));
             }
-        }
-        #endregion
-
-        #region Cast
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mat"></param>
-        /// <returns></returns>
-        public static implicit operator InputArray(Mat mat)
-        {
-            return Create(mat);
+            obj = mat;
         }
 
         /// <summary>
-        /// 
+        /// Releases managed resources
         /// </summary>
-        /// <param name="expr"></param>
-        /// <returns></returns>
-        public static implicit operator InputArray(MatExpr expr)
+        protected override void DisposeManaged()
         {
-            return Create(expr);
+            GC.KeepAlive(obj);
+            obj = null;
+            base.DisposeManaged();
         }
 
         /// <summary>
-        /// 
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="val"></param>
-        /// <returns></returns>
-        public static implicit operator InputArray(Scalar val)
+        protected override void DisposeUnmanaged()
         {
-            return Create(val);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="val"></param>
-        /// <returns></returns>
-        public static implicit operator InputArray(double val)
-        {
-            return Create(val);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mats"></param>
-        /// <returns></returns>
-        public static explicit operator InputArray(List<Mat> mats)
-        {
-            return Create(mats);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mats"></param>
-        /// <returns></returns>
-        public static explicit operator InputArray(Mat[] mats)
-        {
-            return Create((IEnumerable<Mat>)mats);
-        }
-
-        #endregion
-
-        #region Operators
-        #endregion
-
-        #region Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        public InOutArrayKind Kind
-        {
-            get
+            switch (handleKind)
             {
-                ThrowIfDisposed();
-                return (InOutArrayKind)NativeMethods.core_InputArray_kind(ptr);
+                case HandleKind.Scalar:
+                    NativeMethods.HandleException(
+                        NativeMethods.core_InputArray_delete_withScalar(ptr, handle));
+                    break;
+                case HandleKind.Double:
+                    Marshal.FreeHGlobal(handle);
+                    goto default;
+                default:
+                    NativeMethods.HandleException(
+                        NativeMethods.core_InputArray_delete(ptr));
+                    break;
             }
+           
+            base.DisposeUnmanaged();
         }
+
+        #endregion
+
+        #region Create
 
         /// <summary>
         /// Creates a proxy class of the specified Mat
@@ -237,6 +195,17 @@ namespace OpenCvSharp
             return new InputArray(val);
         }
 
+#if ENABLED_CUDA
+        /// <summary>
+        /// Creates a proxy class of the specified GpuMat
+        /// </summary>
+        /// <param name="mat"></param>
+        /// <returns></returns>
+        public static InputArray Create(GpuMat mat)
+        {
+            return new InputArray(mat);
+        }
+#endif
 
         /// <summary>
         /// Creates a proxy class of the specified array of Mat 
@@ -257,8 +226,8 @@ namespace OpenCvSharp
             where T : struct
         {
             if (enumerable == null)
-                throw new ArgumentNullException("nameof(enumerable)");
-            List<T> list = new List<T>(enumerable);
+                throw new ArgumentNullException(nameof(enumerable));
+            var list = new List<T>(enumerable);
             return Create(list.ToArray());
         }
 
@@ -272,8 +241,8 @@ namespace OpenCvSharp
             where T : struct
         {
             if (enumerable == null)
-                throw new ArgumentNullException("nameof(enumerable)");
-            List<T> list = new List<T>(enumerable);
+                throw new ArgumentNullException(nameof(enumerable));
+            var list = new List<T>(enumerable);
             return Create(list.ToArray(), type);
         }
 
@@ -283,9 +252,9 @@ namespace OpenCvSharp
         /// <param name="array">Array object</param>
         /// <returns></returns>
         public static InputArray Create<T>(T[] array)
-            where T : struct 
+            where T : struct
         {
-            MatType type = EstimateType(typeof(T));
+            var type = EstimateType(typeof(T));
             return Create(array, type);
         }
 
@@ -299,12 +268,12 @@ namespace OpenCvSharp
             where T : struct
         {
             if (array == null)
-                throw new ArgumentNullException("nameof(array)");
+                throw new ArgumentNullException(nameof(array));
             if (array.Length == 0)
                 throw new ArgumentException("array.Length == 0");
 
-            int rows = array.Length;
-            Mat mat = new Mat(rows, 1, type, array);
+            var rows = array.Length;
+            var mat = new Mat(rows, 1, type, array);
             return new InputArray(mat);
         }
 
@@ -314,9 +283,9 @@ namespace OpenCvSharp
         /// <param name="array">Array object</param>
         /// <returns></returns>
         public static InputArray Create<T>(T[,] array)
-            where T : struct 
+            where T : struct
         {
-            MatType type = EstimateType(typeof(T));
+            var type = EstimateType(typeof(T));
             return Create(array, type);
         }
 
@@ -330,14 +299,14 @@ namespace OpenCvSharp
             where T : struct
         {
             if (array == null)
-                throw new ArgumentNullException("nameof(array)");
-            int rows = array.GetLength(0);
-            int cols = array.GetLength(1);
+                throw new ArgumentNullException(nameof(array));
+            var rows = array.GetLength(0);
+            var cols = array.GetLength(1);
             if (rows == 0)
                 throw new ArgumentException("array.GetLength(0) == 0");
             if (cols == 0)
                 throw new ArgumentException("array.GetLength(1) == 0");
-            Mat mat = new Mat(rows, cols, type, array);
+            var mat = new Mat(rows, cols, type, array);
             return new InputArray(mat);
         }
 
@@ -348,11 +317,31 @@ namespace OpenCvSharp
         /// <returns></returns>
         private static MatType EstimateType(Type t)
         {
-            if(!t.IsValueType)
-                throw new ArgumentException();
+#if NET40
+            if (!t.IsValueType)
+#else
+            if (!t.GetTypeInfo().IsValueType)
+#endif
+                throw new ArgumentException("Reference type is not supported.");
 
             // Primitive types
-            TypeCode code = Type.GetTypeCode(t);
+#if false
+            if (t == typeof(byte))
+                return MatType.CV_8UC1;
+            if (t == typeof(sbyte))
+                return MatType.CV_8SC1;
+            if (t == typeof(ushort) || t == typeof(char))
+                return MatType.CV_16UC1;
+            if (t == typeof(short))
+                return MatType.CV_16SC1;
+            if (t == typeof(int) || t == typeof(uint))
+                return MatType.CV_32SC1;
+            if (t == typeof(float))
+                return MatType.CV_32FC1;
+            if (t == typeof(double))
+                return MatType.CV_64FC1;
+#else
+            var code = System.Type.GetTypeCode(t);
             switch (code)
             {
                 case TypeCode.Byte:
@@ -372,6 +361,8 @@ namespace OpenCvSharp
                 case TypeCode.Double:
                     return MatType.CV_64FC1;
             }
+#endif
+
             // OpenCV struct types
             if (t == typeof(Point))
                 return MatType.CV_32SC2;
@@ -420,13 +411,13 @@ namespace OpenCvSharp
                 return MatType.CV_16UC4;
             if (t == typeof(Vec6w))
                 return MatType.CV_16UC(6);
-            if (t == typeof(Vec2s))
+            if (t == typeof(Vec2i))
                 return MatType.CV_32SC2;
-            if (t == typeof(Vec3s))
+            if (t == typeof(Vec3i))
                 return MatType.CV_32SC3;
-            if (t == typeof(Vec4s))
+            if (t == typeof(Vec4i))
                 return MatType.CV_32SC4;
-            if (t == typeof(Vec6s))
+            if (t == typeof(Vec6i))
                 return MatType.CV_32SC(6);
             if (t == typeof(Vec2f))
                 return MatType.CV_32FC2;
@@ -447,6 +438,514 @@ namespace OpenCvSharp
 
             throw new ArgumentException("Not supported value type for InputArray");
         }
+        #endregion
+
+        #region Cast
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mat"></param>
+        /// <returns></returns>
+        public static implicit operator InputArray(Mat mat)
+        {
+            return Create(mat);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public static implicit operator InputArray(MatExpr expr)
+        {
+            return Create(expr);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static implicit operator InputArray(Scalar val)
+        {
+            return Create(val);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static implicit operator InputArray(double val)
+        {
+            return Create(val);
+        }
+
+#if ENABLED_CUDA
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mat"></param>
+        /// <returns></returns>
+        public static implicit operator InputArray(GpuMat mat)
+        {
+            return Create(mat);
+        }
+#endif
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mats"></param>
+        /// <returns></returns>
+        public static explicit operator InputArray(List<Mat> mats)
+        {
+            return Create(mats);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mats"></param>
+        /// <returns></returns>
+        public static explicit operator InputArray(Mat[] mats)
+        {
+            return Create(mats);
+        }
+
+        #endregion
+
+        #region Methods
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public Mat GetMat(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_getMat(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return new Mat(ret);
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Mat[] GetMatVector()
+        {
+            ThrowIfDisposed();
+            using var vec = new VectorOfMat();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_getMatVector(ptr, vec.CvPtr));
+            GC.KeepAlive(this);
+            return vec.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public int GetFlags()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_getFlags(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public IntPtr GetObj()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_getObj(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Size GetSz()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_getSz(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public InOutArrayKind Kind()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_kind(ptr, out var ret));
+            GC.KeepAlive(this);
+            return (InOutArrayKind)ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Dims(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_dims(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Cols(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_cols(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Rows(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_rows(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public Size Size(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_size(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sz"></param>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        // ReSharper disable once InconsistentNaming
+        public int SizeND(int[] sz, int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_sizend(ptr, sz, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
+        public bool SameSize(InputArray arr)
+        {
+            if (arr == null)
+                throw new ArgumentNullException(nameof(arr));
+            arr.ThrowIfDisposed();
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_sameSize(ptr, arr.CvPtr, out var ret));
+            GC.KeepAlive(this);
+            GC.KeepAlive(arr);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public long Total(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_total(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret.ToInt64();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Type(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_type(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Depth(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_depth(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public int Channels(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_channels(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public bool IsContinuous(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isContinuous(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public bool IsSubmatrix(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isSubmatrix(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        ///
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool Empty()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_empty(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arr"></param>
+        public void CopyTo(OutputArray arr)
+        {
+            if (arr == null)
+                throw new ArgumentNullException(nameof(arr));
+            arr.ThrowIfNotReady();
+            ThrowIfDisposed();
+
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_copyTo1(ptr, arr.CvPtr));
+
+            GC.KeepAlive(this);
+            GC.KeepAlive(arr);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <param name="mask"></param>
+        public void CopyTo(OutputArray arr, InputArray mask)
+        {
+            if (arr == null)
+                throw new ArgumentNullException(nameof(arr));
+            if (mask == null)
+                throw new ArgumentNullException(nameof(mask));
+            arr.ThrowIfNotReady();
+            mask.ThrowIfDisposed();
+            ThrowIfDisposed();
+
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_copyTo2(ptr, arr.CvPtr, mask.CvPtr));
+
+            arr.Fix();
+            GC.KeepAlive(this);
+            GC.KeepAlive(arr);
+            GC.KeepAlive(mask);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public long Offset(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_offset(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret.ToInt64();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public long Step(int i = -1)
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_step(ptr, i, out var ret));
+            GC.KeepAlive(this);
+            return ret.ToInt64();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMat()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isMat(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsUMat()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isUMat(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMatVector()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isMatVector(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsUMatVector()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isUMatVector(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMatx()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isMatx(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsVector()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isVector(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsGpuMatVector()
+        {
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.core_InputArray_isGpuMatVector(ptr, out var ret));
+            GC.KeepAlive(this);
+            return ret != 0;
+        }
+
         #endregion
     }
 }

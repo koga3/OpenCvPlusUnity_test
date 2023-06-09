@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenCvSharp.Util;
+using System.Linq;
 
 // ReSharper disable once InconsistentNaming
 
@@ -17,18 +17,15 @@ namespace OpenCvSharp.XFeatures2D
 #endif
     public class FREAK : Feature2D
     {
-        private bool disposed;
-        private Ptr<FREAK> ptrObj;
-		
-        #region Init & Disposal
+        private Ptr? ptrObj;
 
         /// <summary>
         /// 
         /// </summary>
-        internal FREAK(Ptr<FREAK> p)
-			: base(p.Get())
+        protected FREAK(IntPtr p)
         {
-			ptrObj = p;
+            ptrObj = new Ptr(p);
+            ptr = ptrObj.Get();
         }
 
         /// <summary>
@@ -44,64 +41,48 @@ namespace OpenCvSharp.XFeatures2D
             bool scaleNormalized = true,
             float patternScale = 22.0f,
             int nOctaves = 4,
-            IEnumerable<int> selectedPairs = null)
+            IEnumerable<int>? selectedPairs = null)
         {
-            int[] selectedPairsArray = EnumerableEx.ToArray(selectedPairs);
-            int selectedPairslength = selectedPairs == null ? 0 : selectedPairsArray.Length;
+            var selectedPairsArray = selectedPairs?.ToArray();
 
-            IntPtr ptr = NativeMethods.xfeatures2d_FREAK_create(orientationNormalized ? 1 : 0,
-                scaleNormalized ? 1 : 0, patternScale, nOctaves,
-                selectedPairsArray, selectedPairslength);
-            return new FREAK(new Ptr<FREAK>(ptr));
+            NativeMethods.HandleException(
+                NativeMethods.xfeatures2d_FREAK_create(
+                    orientationNormalized ? 1 : 0,
+                    scaleNormalized ? 1 : 0, patternScale, nOctaves,
+                    selectedPairsArray, selectedPairsArray?.Length ?? 0, out var ret));
+            return new FREAK(ret);
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Releases the resources
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
+        }
+        
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
             {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                            ptrObj = null;
-                        }
-                    }
-                    // releases unmanaged resources
+            }
 
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_FREAK_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_FREAK_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
-
-        #endregion
-
-        #region Methods
-
-        #endregion
     }
 }

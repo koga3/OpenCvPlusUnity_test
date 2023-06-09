@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenCvSharp.Util;
+using System.Linq;
 
 namespace OpenCvSharp
 {
     /// <summary>
     /// 
     /// </summary>
-    internal class VectorOfMat : DisposableCvObject, IStdVector<Mat>
+    public class VectorOfMat : DisposableCvObject, IStdVector<Mat>
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed = false;
-
-        #region Init and Dispose
-
         /// <summary>
         /// 
         /// </summary>
@@ -31,8 +24,8 @@ namespace OpenCvSharp
         public VectorOfMat(int size)
         {
             if (size < 0)
-                throw new ArgumentOutOfRangeException("nameof(size)");
-            ptr = NativeMethods.vector_Mat_new2(new IntPtr(size));
+                throw new ArgumentOutOfRangeException(nameof(size));
+            ptr = NativeMethods.vector_Mat_new2((uint)size);
         }
 
         /// <summary>
@@ -51,48 +44,43 @@ namespace OpenCvSharp
         public VectorOfMat(IEnumerable<Mat> mats)
         {
             if (mats == null)
-                throw new ArgumentNullException("nameof(mats)");
+                throw new ArgumentNullException(nameof(mats));
 
-            var matPointers = EnumerableEx.SelectPtrs(mats);
-			ptr = NativeMethods.vector_Mat_new3(matPointers, new IntPtr(matPointers.Length));
-        }
+            var matsArray = mats.ToArray();
+            var matPointers = matsArray.Select(x => x.CvPtr).ToArray();
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-        protected override void Dispose(bool disposing)
-        {
-            if (!disposed)
+            ptr = NativeMethods.vector_Mat_new3(
+                matPointers,
+                (uint) matPointers.Length);
+
+            GC.KeepAlive(matPointers);
+            GC.KeepAlive(mats); // todo: rsb - should probably generate Mat[] and then get CvPtrs
+            foreach (var m in matsArray)
             {
-                try
-                {
-                    if (IsEnabledDispose)
-                    {
-                        NativeMethods.vector_Mat_delete(ptr);
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+                GC.KeepAlive(m);
             }
         }
 
-        #endregion
-
-        #region Properties
+        /// <summary>
+        /// Releases unmanaged resources
+        /// </summary>
+        protected override void DisposeUnmanaged()
+        {
+            NativeMethods.vector_Mat_delete(ptr);
+            base.DisposeUnmanaged();
+        }
 
         /// <summary>
         /// vector.size()
         /// </summary>
         public int Size
         {
-            get { return NativeMethods.vector_Mat_getSize(ptr).ToInt32(); }
+            get
+            {
+                var res = NativeMethods.vector_Mat_getSize(ptr).ToInt32();
+                GC.KeepAlive(this);
+                return res;
+            }
         }
 
         /// <summary>
@@ -100,12 +88,13 @@ namespace OpenCvSharp
         /// </summary>
         public IntPtr ElemPtr
         {
-            get { return NativeMethods.vector_Mat_getPointer(ptr); }
+            get
+            {
+                var res = NativeMethods.vector_Mat_getPointer(ptr);
+                GC.KeepAlive(this);
+                return res;
+            }
         }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Converts std::vector to managed array
@@ -123,19 +112,20 @@ namespace OpenCvSharp
         public T[] ToArray<T>()
             where T : Mat, new()
         {
-            int size = Size;
+            var size = Size;
             if (size == 0)
-                return new T[0];
+                return Array.Empty<T>();
 
-            T[] dst = new T[size];
-            IntPtr[] dstPtr = new IntPtr[size];
-            for (int i = 0; i < size; i++)
+            var dst = new T[size];
+            var dstPtr = new IntPtr[size];
+            for (var i = 0; i < size; i++)
             {
-                T m = new T();
+                var m = new T();
                 dst[i] = m;
                 dstPtr[i] = m.CvPtr;
             }
             NativeMethods.vector_Mat_assignToArray(ptr, dstPtr);
+            GC.KeepAlive(this);
 
             return dst;
         }
@@ -146,8 +136,7 @@ namespace OpenCvSharp
         public void AddRef()
         {
             NativeMethods.vector_Mat_addref(ptr);
+            GC.KeepAlive(this);
         }
-
-        #endregion
     }
 }

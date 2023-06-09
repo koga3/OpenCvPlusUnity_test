@@ -1,24 +1,23 @@
-﻿
-namespace OpenCvSharp
+﻿namespace OpenCvSharp
 {
     // ReSharper disable InconsistentNaming
 
 #if LANG_JP
     /// <summary>
-	/// 逆行列を求める手法
-	/// </summary>
+    /// 逆行列を求める手法
+    /// </summary>
 #else
     /// <summary>
     /// Inversion methods
     /// </summary>
 #endif
-    public enum DecompTypes : int
+    public enum DecompTypes
     {
 #if LANG_JP
-		/// <summary>
-		/// 最適なピボット選択によるガウスの消去法 
+        /// <summary>
+        /// 最適なピボット選択によるガウスの消去法 
         /// [CV_LU]
-		/// </summary>
+        /// </summary>
 #else
         /// <summary>
         /// Gaussian elimination with the optimal pivot element chosen.
@@ -28,10 +27,10 @@ namespace OpenCvSharp
         LU = 0,
 
 #if LANG_JP
-		/// <summary>
-		/// 特異値分解 
+        /// <summary>
+        /// 特異値分解 
         /// [CV_SVD]
-		/// </summary>
+        /// </summary>
 #else
         /// <summary>
         /// singular value decomposition (SVD) method; 

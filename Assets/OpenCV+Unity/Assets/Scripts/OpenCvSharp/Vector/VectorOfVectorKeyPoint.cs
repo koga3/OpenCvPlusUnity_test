@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using OpenCvSharp.Util;
 
 namespace OpenCvSharp
@@ -6,15 +7,8 @@ namespace OpenCvSharp
     /// <summary>
     /// 
     /// </summary>
-    internal class VectorOfVectorKeyPoint : DisposableCvObject, IStdVector<KeyPoint[]>
+    public class VectorOfVectorKeyPoint : DisposableCvObject, IStdVector<KeyPoint[]>
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed;
-
-        #region Init and Dispose
-
         /// <summary>
         /// 
         /// </summary>
@@ -30,7 +24,7 @@ namespace OpenCvSharp
         public VectorOfVectorKeyPoint(int size)
         {
             if (size < 0)
-                throw new ArgumentOutOfRangeException("nameof(size)");
+                throw new ArgumentOutOfRangeException(nameof(size));
             ptr = NativeMethods.vector_vector_KeyPoint_new2(new IntPtr(size));
         }
 
@@ -41,89 +35,56 @@ namespace OpenCvSharp
         public VectorOfVectorKeyPoint(KeyPoint[][] values)
         {
             if (values == null)
-                throw new ArgumentNullException("nameof(values)");
+                throw new ArgumentNullException(nameof(values));
 
             using (var aa = new ArrayAddress2<KeyPoint>(values))
             {
                 ptr = NativeMethods.vector_vector_KeyPoint_new3(
-                    aa.Pointer, aa.Dim1Length, aa.Dim2Lengths);
+                    aa.GetPointer(), aa.GetDim1Length(), aa.GetDim2Lengths());
             }
         }
-
+        
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-        protected override void Dispose(bool disposing)
+        protected override void DisposeUnmanaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (IsEnabledDispose)
-                    {
-                        NativeMethods.vector_vector_KeyPoint_delete(ptr);
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.vector_vector_KeyPoint_delete(ptr);
+            base.DisposeUnmanaged();
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// vector.size()
         /// </summary>
-        public int Size1
+        public int GetSize1()
         {
-            get { return NativeMethods.vector_vector_KeyPoint_getSize1(ptr).ToInt32(); }
+            var res = NativeMethods.vector_vector_KeyPoint_getSize1(ptr).ToInt32();
+            GC.KeepAlive(this);
+            return res;
         }
 
-        public int Size
-        {
-            get { return Size1; }
-        }
+        /// <summary>
+        /// vector.size()
+        /// </summary>
+        public int Size => GetSize1();
 
         /// <summary>
         /// vector[i].size()
         /// </summary>
-        public long[] Size2
+        public IReadOnlyList<long> GetSize2()
         {
-            get
+            var size1 = GetSize1();
+            var size2Org = new IntPtr[size1];
+            NativeMethods.vector_vector_KeyPoint_getSize2(ptr, size2Org);
+            GC.KeepAlive(this);
+            var size2 = new long[size1];
+            for (var i = 0; i < size1; i++)
             {
-                int size1 = Size1;
-                IntPtr[] size2Org = new IntPtr[size1];
-                NativeMethods.vector_vector_KeyPoint_getSize2(ptr, size2Org);
-                long[] size2 = new long[size1];
-                for (int i = 0; i < size1; i++)
-                {
-                    size2[i] = size2Org[i].ToInt64();
-                }
-                return size2;
+                size2[i] = size2Org[i].ToInt64();
             }
+
+            return size2;
         }
-
-
-        /// <summary>
-        /// &amp;vector[0]
-        /// </summary>
-        public IntPtr ElemPtr
-        {
-            get { return NativeMethods.vector_vector_KeyPoint_getPointer(ptr); }
-        }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Converts std::vector to managed array
@@ -131,23 +92,22 @@ namespace OpenCvSharp
         /// <returns></returns>
         public KeyPoint[][] ToArray()
         {
-            int size1 = Size1;
+            var size1 = GetSize1();
             if (size1 == 0)
-                return new KeyPoint[0][];
-            long[] size2 = Size2;
+                return Array.Empty<KeyPoint[]>();
+            var size2 = GetSize2();
 
             var ret = new KeyPoint[size1][];
-            for (int i = 0; i < size1; i++)
+            for (var i = 0; i < size1; i++)
             {
                 ret[i] = new KeyPoint[size2[i]];
             }
             using (var retPtr = new ArrayAddress2<KeyPoint>(ret))
             {
-                NativeMethods.vector_vector_KeyPoint_copy(ptr, retPtr);
+                NativeMethods.vector_vector_KeyPoint_copy(ptr, retPtr.GetPointer());
+                GC.KeepAlive(this);
             }
             return ret;
         }
-
-        #endregion
     }
 }

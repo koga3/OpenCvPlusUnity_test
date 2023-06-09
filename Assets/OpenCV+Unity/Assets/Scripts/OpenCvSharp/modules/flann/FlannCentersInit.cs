@@ -1,20 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿// ReSharper disable InconsistentNaming
+// ReSharper disable CommentTypo
 namespace OpenCvSharp.Flann
 {
-
 #if LANG_JP
     /// <summary>
-	/// k-means クラスタリングの初期中心を選択するアルゴリズム．
-	/// </summary>
+    /// k-means クラスタリングの初期中心を選択するアルゴリズム．
+    /// </summary>
 #else
     /// <summary>
     /// The algorithm to use for selecting the initial centers when performing a k-means clustering step. 
     /// </summary>
 #endif
-    public enum FlannCentersInit : int
+    public enum FlannCentersInit
     {
 #if LANG_JP
         /// <summary>
@@ -54,7 +51,6 @@ namespace OpenCvSharp.Flann
         /// </summary>
 #endif
         KMeansPP = 2
-
     }
 }
 

@@ -25,8 +25,7 @@ namespace OpenCvSharp
 #endif
     public class StereoSGBM : StereoMatcher
     {
-        private bool disposed;
-        private Ptr<StereoSGBM> ptrObj;
+        private Ptr? ptrObj;
 
         #region Init and Disposal
 
@@ -35,7 +34,7 @@ namespace OpenCvSharp
         /// </summary>
         protected StereoSGBM(IntPtr ptr) : base(ptr)
         {
-            ptrObj = new Ptr<StereoSGBM>(ptr);
+            ptrObj = new Ptr(ptr);
         }
 
         /// <summary>
@@ -60,156 +59,171 @@ namespace OpenCvSharp
             int speckleWindowSize = 0, int speckleRange = 0,
             StereoSGBMMode mode = StereoSGBMMode.SGBM)
         {
-            IntPtr ptrObj = NativeMethods.calib3d_StereoSGBM_create(
-                minDisparity, numDisparities, blockSize,
-                p1, p2, disp12MaxDiff, preFilterCap, uniquenessRatio,
-                speckleWindowSize, speckleRange, (int) mode);
+            NativeMethods.HandleException(
+                NativeMethods.calib3d_StereoSGBM_create(
+                    minDisparity, numDisparities, blockSize,
+                    p1, p2, disp12MaxDiff, preFilterCap, uniquenessRatio,
+                    speckleWindowSize, speckleRange, (int) mode, out var ptrObj));
             return new StereoSGBM(ptrObj);
         }
 
-#if LANG_JP
         /// <summary>
-        /// リソースの解放
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-        /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-        ///</param>
-#else
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {                        
-                    }
-                    if (IsEnabledDispose)
-                    {
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                        }
-                        ptrObj = null;
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
         }
+
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// 
+        /// Truncation value for the prefiltered image pixels. The algorithm first
+        /// computes x-derivative at each pixel and clips its value by [-preFilterCap, preFilterCap] interval.
+        /// The result values are passed to the Birchfield-Tomasi pixel cost function.
         /// </summary>
         public int PreFilterCap
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.calib3d_StereoSGBM_getPreFilterCap(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_getPreFilterCap(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.calib3d_StereoSGBM_setPreFilterCap(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_setPreFilterCap(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Margin in percentage by which the best (minimum) computed cost function
+        /// value should "win" the second best value to consider the found match correct. Normally, a value
+        /// within the 5-15 range is good enough.
         /// </summary>
         public int UniquenessRatio
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.calib3d_StereoSGBM_getUniquenessRatio(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_getUniquenessRatio(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.calib3d_StereoSGBM_setUniquenessRatio(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_setUniquenessRatio(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// The first parameter controlling the disparity smoothness. See P2 description.
         /// </summary>
         public int P1
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.calib3d_StereoSGBM_getP1(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_getP1(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.calib3d_StereoSGBM_setP1(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_setP1(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// The second parameter controlling the disparity smoothness. The larger the values are,
+        /// the smoother the disparity is. P1 is the penalty on the disparity change by plus or minus 1
+        /// between neighbor pixels. P2 is the penalty on the disparity change by more than 1 between neighbor
+        /// pixels. The algorithm requires P2 \> P1 . See stereo_match.cpp sample where some reasonably good
+        /// P1 and P2 values are shown (like 8\*number_of_image_channels\*SADWindowSize\*SADWindowSize and
+        /// 32\*number_of_image_channels\*SADWindowSize\*SADWindowSize , respectively).
         /// </summary>
         public int P2
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.calib3d_StereoSGBM_getP2(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_getP2(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.calib3d_StereoSGBM_setP2(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_setP2(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
         /// <summary>
-        /// 
+        /// Set it to StereoSGBM::MODE_HH to run the full-scale two-pass dynamic programming
+        /// algorithm. It will consume O(W\*H\*numDisparities) bytes, which is large for 640x480 stereo and
+        /// huge for HD-size pictures. By default, it is set to false .
         /// </summary>
         public StereoSGBMMode Mode
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return (StereoSGBMMode)NativeMethods.calib3d_StereoSGBM_getMode(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_getMode(ptr, out var ret));
+                GC.KeepAlive(this);
+                return (StereoSGBMMode)ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.calib3d_StereoSGBM_setMode(ptr, (int)value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_StereoSGBM_setMode(ptr, (int)value));
+                GC.KeepAlive(this);
             }
         }
 
         #endregion
 
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_Ptr_StereoSGBM_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.calib3d_Ptr_StereoSGBM_delete(ptr));
+                base.DisposeUnmanaged();
+            }
+        }
     }
 }

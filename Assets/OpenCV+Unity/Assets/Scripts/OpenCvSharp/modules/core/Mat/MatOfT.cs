@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenCvSharp
 {
@@ -8,15 +9,18 @@ namespace OpenCvSharp
     /// Type-specific abstract matrix 
     /// </summary>
     /// <typeparam name="TElem">Element Type</typeparam>
-    /// <typeparam name="TInherit">For return value type of re-defined Mat methods</typeparam>
-    public abstract class Mat<TElem, TInherit> : Mat, ICollection<TElem> 
-        where TElem : struct
-        where TInherit : Mat, new()
+    public class Mat<TElem> : Mat, ICollection<TElem> 
+        where TElem : unmanaged
     {
-        private bool disposed;
-        private Mat sourceMat;
-
         #region Init & Disposal
+
+        private static MatType GetMatType()
+        {
+            var type = typeof(TElem);
+            if (TypeMap.TryGetValue(type, out var value))
+                return value;
+            throw new NotSupportedException($"Type parameter {type} is not supported by Mat<T>");
+        }
 
 #if LANG_JP
         /// <summary>
@@ -27,8 +31,8 @@ namespace OpenCvSharp
         /// Creates empty Mat
         /// </summary>
 #endif
-        protected Mat()
-            : base()
+        public Mat()
+            : this(0, 0)
         {
         }
 
@@ -43,7 +47,7 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="ptr"></param>
 #endif
-        protected Mat(IntPtr ptr)
+        public Mat(IntPtr ptr)
             : base(ptr)
         {
         }
@@ -59,11 +63,9 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="mat">Managed Mat object</param>
 #endif
-        protected Mat(Mat mat)
-            : base(mat.CvPtr)
+        public Mat(Mat mat)
+            : base(mat)
         {
-            // 作成元への参照を残す。元がGCに回収されないように。
-            sourceMat = mat;
         }
 
 #if LANG_JP
@@ -72,19 +74,15 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">2次元配列における行数．</param>
         /// <param name="cols">2次元配列における列数．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
 #else
         /// <summary>
         /// constructs 2D matrix of the specified size and type
         /// </summary>
         /// <param name="rows">Number of rows in a 2D array.</param>
         /// <param name="cols">Number of columns in a 2D array.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
 #endif
-        protected Mat(int rows, int cols, MatType type)
-            : base(rows, cols, type)
+        public Mat(int rows, int cols)
+            : base(rows, cols, GetMatType())
         {
         }
 
@@ -93,19 +91,15 @@ namespace OpenCvSharp
         /// 指定したサイズ・型の2次元の行列として初期化
         /// </summary>
         /// <param name="size">2次元配列のサイズ： Size(cols, rows) ． Size コンストラクタでは，行数と列数が逆順になっていることに注意してください．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
 #else
         /// <summary>
         /// constructs 2D matrix of the specified size and type
         /// </summary>
         /// <param name="size">2D array size: Size(cols, rows) . In the Size() constructor, 
         /// the number of rows and the number of columns go in the reverse order.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType.CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
 #endif
-        protected Mat(Size size, MatType type)
-            : base(size, type)
+        public Mat(Size size)
+            : base(size, GetMatType())
         {
         }
 
@@ -115,23 +109,19 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">2次元配列における行数．</param>
         /// <param name="cols">2次元配列における列数．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="s">各行列要素を初期化するオプション値．初期化の後ですべての行列要素を特定の値にセットするには，
         /// コンストラクタの後で，SetTo(Scalar value) メソッドを利用してください．</param>
 #else
         /// <summary>
-        /// constucts 2D matrix and fills it with the specified Scalar value.
+        /// constructs 2D matrix and fills it with the specified Scalar value.
         /// </summary>
         /// <param name="rows">Number of rows in a 2D array.</param>
         /// <param name="cols">Number of columns in a 2D array.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="s">An optional value to initialize each matrix element with. 
         /// To set all the matrix elements to the particular value after the construction, use SetTo(Scalar s) method .</param>
 #endif
-        protected Mat(int rows, int cols, MatType type, Scalar s)
-            : base(rows, cols, type, s)
+        public Mat(int rows, int cols, Scalar s)
+            : base(rows, cols, GetMatType(), s)
         {
         }
 
@@ -140,23 +130,19 @@ namespace OpenCvSharp
         /// 指定したサイズ・型の2次元の行列で、要素をスカラー値で埋めて初期化
         /// </summary>
         /// <param name="size"> 2 次元配列のサイズ： Size(cols, rows) ． Size() コンストラクタでは，行数と列数が逆順になっていることに注意してください．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="s">各行列要素を初期化するオプション値．初期化の後ですべての行列要素を特定の値にセットするには，
         /// コンストラクタの後で，SetTo(Scalar value) メソッドを利用してください．</param>
 #else
         /// <summary>
-        /// constucts 2D matrix and fills it with the specified Scalar value.
+        /// constructs 2D matrix and fills it with the specified Scalar value.
         /// </summary>
         /// <param name="size">2D array size: Size(cols, rows) . In the Size() constructor, 
         /// the number of rows and the number of columns go in the reverse order.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or CV_8UC(n), ..., CV_64FC(n) to create multi-channel (up to CV_CN_MAX channels) matrices.</param>
         /// <param name="s">An optional value to initialize each matrix element with. 
         /// To set all the matrix elements to the particular value after the construction, use SetTo(Scalar s) method .</param>
 #endif
-        protected Mat(Size size, MatType type, Scalar s)
-            : base(size, type, s)
+        public Mat(Size size, Scalar s)
+            : base(size, GetMatType(), s)
         {
         }
 
@@ -187,7 +173,7 @@ namespace OpenCvSharp
         /// Use Range.All to take all the rows.</param>
         /// <param name="colRange">Range of the m columns to take. Use Range.All to take all the columns.</param>
 #endif
-        protected Mat(Mat<TElem, TInherit> m, Range rowRange, Range? colRange = null)
+        public Mat(Mat<TElem> m, Range rowRange, Range? colRange = null)
             : base(m, rowRange, colRange)
         {
         }
@@ -215,7 +201,7 @@ namespace OpenCvSharp
         /// If you want to have an independent copy of the sub-array, use Mat.Clone() .</param>
         /// <param name="ranges">Array of selected ranges of m along each dimensionality.</param>
 #endif
-        protected Mat(Mat<TElem, TInherit> m, params Range[] ranges)
+        protected Mat(Mat<TElem> m, params Range[] ranges)
             : base(m, ranges)
         {
         }
@@ -243,7 +229,7 @@ namespace OpenCvSharp
         /// If you want to have an independent copy of the sub-array, use Mat.Clone() .</param>
         /// <param name="roi">Region of interest.</param>
 #endif
-        protected Mat(Mat<TElem, TInherit> m, Rect roi)
+        public Mat(Mat<TElem> m, Rect roi)
             : base(m, roi)
         {
         }
@@ -254,8 +240,6 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">2次元配列における行数．</param>
         /// <param name="cols">2次元配列における列数．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="data">ユーザデータへのポインタ． data と step パラメータを引数にとる
         /// 行列コンストラクタは，行列データ領域を確保しません．代わりに，指定のデータを指し示す
         /// 行列ヘッダを初期化します．つまり，データのコピーは行われません．
@@ -271,17 +255,15 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">Number of rows in a 2D array.</param>
         /// <param name="cols">Number of columns in a 2D array.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. 
         /// Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. 
         /// This operation is very efficient and can be used to process external data using OpenCV functions. 
-        /// The external data is not automatically deallocated, so you should take care of it.</param>
+        /// The external data is not automatically de-allocated, so you should take care of it.</param>
         /// <param name="step">Number of bytes each matrix row occupies. The value should include the padding bytes at the end of each row, if any.
         /// If the parameter is missing (set to AUTO_STEP ), no padding is assumed and the actual step is calculated as cols*elemSize() .</param>
 #endif
-        protected Mat(int rows, int cols, MatType type, IntPtr data, long step = 0)
-            : base(rows, cols, type, data, step)
+        protected Mat(int rows, int cols, IntPtr data, long step = 0)
+            : base(rows, cols, GetMatType(), data, step)
         {
         }
 
@@ -291,8 +273,6 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">2次元配列における行数．</param>
         /// <param name="cols">2次元配列における列数．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="data">ユーザデータへのポインタ． data と step パラメータを引数にとる
         /// 行列コンストラクタは，行列データ領域を確保しません．代わりに，指定のデータを指し示す
         /// 行列ヘッダを初期化します．つまり，データのコピーは行われません．
@@ -308,17 +288,15 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="rows">Number of rows in a 2D array.</param>
         /// <param name="cols">Number of columns in a 2D array.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. 
         /// Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. 
         /// This operation is very efficient and can be used to process external data using OpenCV functions. 
-        /// The external data is not automatically deallocated, so you should take care of it.</param>
+        /// The external data is not automatically de-allocated, so you should take care of it.</param>
         /// <param name="step">Number of bytes each matrix row occupies. The value should include the padding bytes at the end of each row, if any.
         /// If the parameter is missing (set to AUTO_STEP ), no padding is assumed and the actual step is calculated as cols*elemSize() .</param>
 #endif
-        protected Mat(int rows, int cols, MatType type, Array data, long step = 0)
-            : base(rows, cols, type, data, step)
+        public Mat(int rows, int cols, Array data, long step = 0)
+            : base(rows, cols, GetMatType(), data, step)
         {
         }
 
@@ -327,8 +305,6 @@ namespace OpenCvSharp
         /// 利用者が別に確保したデータで初期化
         /// </summary>
         /// <param name="sizes">Array of integers specifying an n-dimensional array shape.</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="data">ユーザデータへのポインタ． data と step パラメータを引数にとる
         /// 行列コンストラクタは，行列データ領域を確保しません．代わりに，指定のデータを指し示す
         /// 行列ヘッダを初期化します．つまり，データのコピーは行われません．
@@ -342,17 +318,15 @@ namespace OpenCvSharp
         /// constructor for matrix headers pointing to user-allocated data
         /// </summary>
         /// <param name="sizes">Array of integers specifying an n-dimensional array shape.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. 
         /// Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. 
         /// This operation is very efficient and can be used to process external data using OpenCV functions. 
-        /// The external data is not automatically deallocated, so you should take care of it.</param>
+        /// The external data is not automatically de-allocated, so you should take care of it.</param>
         /// <param name="steps">Array of ndims-1 steps in case of a multi-dimensional array (the last step is always set to the element size). 
         /// If not specified, the matrix is assumed to be continuous.</param>
 #endif
-        protected Mat(IEnumerable<int> sizes, MatType type, IntPtr data, IEnumerable<long> steps = null)
-            : base(sizes, type, data, steps)
+        public Mat(IEnumerable<int> sizes, IntPtr data, IEnumerable<long>? steps = null)
+            : base(sizes, GetMatType(), data, steps)
         {
         }
 
@@ -361,8 +335,6 @@ namespace OpenCvSharp
         /// 利用者が別に確保したデータで初期化
         /// </summary>
         /// <param name="sizes">n-次元配列の形状を表す，整数型の配列．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="data">ユーザデータへのポインタ． data と step パラメータを引数にとる
         /// 行列コンストラクタは，行列データ領域を確保しません．代わりに，指定のデータを指し示す
         /// 行列ヘッダを初期化します．つまり，データのコピーは行われません．
@@ -376,17 +348,15 @@ namespace OpenCvSharp
         /// constructor for matrix headers pointing to user-allocated data
         /// </summary>
         /// <param name="sizes">Array of integers specifying an n-dimensional array shape.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. 
         /// Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. 
         /// This operation is very efficient and can be used to process external data using OpenCV functions. 
-        /// The external data is not automatically deallocated, so you should take care of it.</param>
+        /// The external data is not automatically de-allocated, so you should take care of it.</param>
         /// <param name="steps">Array of ndims-1 steps in case of a multi-dimensional array (the last step is always set to the element size). 
         /// If not specified, the matrix is assumed to be continuous.</param>
 #endif
-        protected Mat(IEnumerable<int> sizes, MatType type, Array data, IEnumerable<long> steps = null)
-            : base(sizes, type, data, steps)
+        public Mat(IEnumerable<int> sizes, Array data, IEnumerable<long>? steps = null)
+            : base(sizes, GetMatType(), data, steps)
         {
         }
 
@@ -395,18 +365,14 @@ namespace OpenCvSharp
         /// N次元行列として初期化
         /// </summary>
         /// <param name="sizes">n-次元配列の形状を表す，整数型の配列．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
 #else
         /// <summary>
         /// constructs n-dimensional matrix
         /// </summary>
         /// <param name="sizes">Array of integers specifying an n-dimensional array shape.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
 #endif
-        protected Mat(IEnumerable<int> sizes, MatType type)
-            : base(sizes, type)
+        public Mat(IEnumerable<int> sizes)
+            : base(sizes, GetMatType())
         {
         }
 
@@ -415,8 +381,6 @@ namespace OpenCvSharp
         /// N次元行列として初期化
         /// </summary>
         /// <param name="sizes">n-次元配列の形状を表す，整数型の配列．</param>
-        /// <param name="type">配列の型．1-4 チャンネルの行列を作成するには MatType.CV_8UC1, ..., CV_64FC4 を，
-        /// マルチチャンネルの行列を作成するには，MatType.CV_8UC(n), ..., CV_64FC(n) を利用してください．</param>
         /// <param name="s">各行列要素を初期化するオプション値．初期化の後ですべての行列要素を特定の値にセットするには，
         /// コンストラクタの後で，SetTo(Scalar value) メソッドを利用してください．</param>
 #else
@@ -424,66 +388,136 @@ namespace OpenCvSharp
         /// constructs n-dimensional matrix
         /// </summary>
         /// <param name="sizes">Array of integers specifying an n-dimensional array shape.</param>
-        /// <param name="type">Array type. Use MatType.CV_8UC1, ..., CV_64FC4 to create 1-4 channel matrices, 
-        /// or MatType. CV_8UC(n), ..., CV_64FC(n) to create multi-channel matrices.</param>
         /// <param name="s">An optional value to initialize each matrix element with. 
         /// To set all the matrix elements to the particular value after the construction, use SetTo(Scalar s) method .</param>
 #endif
-        protected Mat(IEnumerable<int> sizes, MatType type, Scalar s)
-            : base(sizes, type, s)
+        public Mat(IEnumerable<int> sizes, Scalar s)
+            : base(sizes, GetMatType(), s)
         {
         }
 
-#if LANG_JP
-        /// <summary>
-        /// リソースの解放
-        /// </summary>
-        /// <param name="disposing">
-        /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-        /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-        ///</param>
-#else
-        /// <summary>
-        /// Releases the resources
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (sourceMat == null)
-                {
-                    base.Dispose(disposing);
-                }
-                else
-                {
-                    // sourceMat.Disposeに解放を任せるので
-                    // ここでは何もしない
-                }
+        #endregion
 
-                sourceMat = null;
-                disposed = true;
+        #region Indexer
+
+        /// <summary>
+        /// Matrix indexer
+        /// </summary>
+        public sealed unsafe class Indexer : MatIndexer<TElem>
+        {
+            private readonly byte* ptr;
+
+            internal Indexer(Mat parent)
+                : base(parent)
+            {
+                ptr = (byte*)parent.Data.ToPointer();
+            }
+
+            /// <summary>
+            /// 1-dimensional indexer
+            /// </summary>
+            /// <param name="i0">Index along the dimension 0</param>
+            /// <returns>A value to the specified array element.</returns>
+            public override TElem this[int i0]
+            {
+                get => *(TElem*)(ptr + (Steps[0] * i0));
+                set => *(TElem*)(ptr + (Steps[0] * i0)) = value;
+            }
+
+            /// <summary>
+            /// 2-dimensional indexer
+            /// </summary>
+            /// <param name="i0">Index along the dimension 0</param>
+            /// <param name="i1">Index along the dimension 1</param>
+            /// <returns>A value to the specified array element.</returns>
+            public override TElem this[int i0, int i1]
+            {
+                get => *(TElem*)(ptr + (Steps[0] * i0) + (Steps[1] * i1));
+                set => *(TElem*)(ptr + (Steps[0] * i0) + (Steps[1] * i1)) = value;
+            }
+
+            /// <summary>
+            /// 3-dimensional indexer
+            /// </summary>
+            /// <param name="i0">Index along the dimension 0</param>
+            /// <param name="i1">Index along the dimension 1</param>
+            /// <param name="i2"> Index along the dimension 2</param>
+            /// <returns>A value to the specified array element.</returns>
+            public override TElem this[int i0, int i1, int i2]
+            {
+                get => *(TElem*)(ptr + (Steps[0] * i0) + (Steps[1] * i1) + (Steps[2] * i2));
+                set => *(TElem*)(ptr + (Steps[0] * i0) + (Steps[1] * i1) + (Steps[2] * i2)) = value;
+            }
+
+            /// <summary>
+            /// n-dimensional indexer
+            /// </summary>
+            /// <param name="idx">Array of Mat::dims indices.</param>
+            /// <returns>A value to the specified array element.</returns>
+            public override TElem this[params int[] idx]
+            {
+                get
+                {
+                    long offset = 0;
+                    for (var i = 0; i < idx.Length; i++)
+                    {
+                        offset += Steps[i] * idx[i];
+                    }
+                    return *(TElem*)(ptr + offset);
+                }
+                set
+                {
+                    long offset = 0;
+                    for (var i = 0; i < idx.Length; i++)
+                    {
+                        offset += Steps[i] * idx[i];
+                    }
+                    *(TElem*)(ptr + offset) = value;
+                }
             }
         }
 
         #endregion
 
-        #region Abstract Methods
+        #region Methods
+
         /// <summary>
-        /// Gets type-specific indexer for accessing each element
+        /// Gets a type-specific indexer. The indexer has getters/setters to access each matrix element.
         /// </summary>
         /// <returns></returns>
-        public abstract MatIndexer<TElem> GetIndexer();
+        public MatIndexer<TElem> GetIndexer()
+        {
+            return new Indexer(this);
+        }
 
         /// <summary>
         /// Gets read-only enumerator
         /// </summary>
         /// <returns></returns>
-        public abstract IEnumerator<TElem> GetEnumerator();
+        public IEnumerator<TElem> GetEnumerator()
+        {
+            ThrowIfDisposed();
+            var indexer = new Indexer(this);
+
+            var dims = Dims;
+            if (dims == 2)
+            {
+                var rows = Rows;
+                var cols = Cols;
+                for (var r = 0; r < rows; r++)
+                {
+                    for (var c = 0; c < cols; c++)
+                    {
+                        yield return indexer[r, c];
+                    }
+                }
+            }
+            else
+            {
+                throw new NotImplementedException("GetEnumerator supports only 2-dimensional Mat");
+            }
+        }
+
         /// <summary>
         /// For non-generic IEnumerable
         /// </summary>
@@ -497,14 +531,33 @@ namespace OpenCvSharp
         /// Convert this mat to managed array
         /// </summary>
         /// <returns></returns>
-        public abstract TElem[] ToArray();
+        public TElem[] ToArray()
+        {
+            if (Rows == 0 || Cols == 0)
+                return Array.Empty<TElem>();
+
+            if (!GetArray(out TElem[] array))
+                throw new OpenCvSharpException("Failed to copy pixel data into managed array");
+
+            return array;
+        }
 
         /// <summary>
         /// Convert this mat to managed rectangular array
         /// </summary>
         /// <returns></returns>
-        public abstract TElem[,] ToRectangularArray();
-        #endregion
+        public TElem[,] ToRectangularArray()
+        {
+            if (Rows == 0 || Cols == 0)
+                return new TElem[0, 0];
+
+            if (!GetRectangularArray(out TElem[,] array))
+                throw new OpenCvSharpException("Failed to copy pixel data into managed array");
+
+            return array;
+        }
+
+#endregion
 
         #region Mat Methods
         /// <summary>
@@ -512,35 +565,43 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="mat"></param>
         /// <returns></returns>
-        protected TInherit Wrap(Mat mat)
+        protected Mat<TElem> Wrap(Mat mat)
         {
-            TInherit ret = new TInherit();
+            if (mat == null)
+                throw new ArgumentNullException(nameof(mat));
+
+            var ret = new Mat<TElem>();
             mat.AssignTo(ret);
             return ret;
         }
         
-        #region Clone
+#region Clone
 
         /// <summary>
         /// Creates a full copy of the matrix.
         /// </summary>
         /// <returns></returns>
-        public new TInherit Clone()
+        public new Mat<TElem> Clone()
         {
-            Mat result = base.Clone();
-            return Wrap(result);
+            using (var result = base.Clone())
+            {
+                return Wrap(result);
+            }
         }
-        #endregion
-        #region Reshape
+
+#endregion
+#region Reshape
 
         /// <summary>
         /// Changes the shape of channels of a 2D matrix without copying the data.
         /// </summary>
         /// <param name="rows">New number of rows. If the parameter is 0, the number of rows remains the same.</param>
         /// <returns></returns>
-        public TInherit Reshape(int rows)
+        public Mat<TElem> Reshape(int rows)
         {
-            Mat result = base.Reshape(0, rows);
+#pragma warning disable CA2000 
+            var result = base.Reshape(0, rows);
+#pragma warning restore CA2000 
             return Wrap(result);
         }
 
@@ -549,28 +610,32 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="newDims">New number of rows. If the parameter is 0, the number of rows remains the same.</param>
         /// <returns></returns>
-        public TInherit Reshape(params int[] newDims)
+        public Mat<TElem> Reshape(params int[] newDims)
         {
-            Mat result = base.Reshape(0, newDims);
+#pragma warning disable CA2000 
+            var result = base.Reshape(0, newDims);
+#pragma warning restore CA2000
             return Wrap(result);
         }
 
-        #endregion
-        #region T
+#endregion
+#region T
 
         /// <summary>
         /// Transposes a matrix.
         /// </summary>
         /// <returns></returns>
-        public new TInherit T()
+        public new Mat<TElem> T()
         {
-            Mat result = base.T();
-            return Wrap(result);
+            using (var result = base.T())
+            {
+                return Wrap(result);
+            }
         }
 
-        #endregion
+#endregion
 
-        #region SubMat
+#region SubMat
         /// <summary>
         /// Extracts a rectangular submatrix.
         /// </summary>
@@ -579,9 +644,11 @@ namespace OpenCvSharp
         /// <param name="colStart">Start column of the extracted submatrix. The upper boundary is not included.</param>
         /// <param name="colEnd">End column of the extracted submatrix. The upper boundary is not included.</param>
         /// <returns></returns>
-        public new TInherit SubMat(int rowStart, int rowEnd, int colStart, int colEnd)
+        public new Mat<TElem> SubMat(int rowStart, int rowEnd, int colStart, int colEnd)
         {
-            Mat result = base.SubMat(rowStart, rowEnd, colStart, colEnd);
+#pragma warning disable CA2000 
+            var result = base.SubMat(rowStart, rowEnd, colStart, colEnd);
+#pragma warning restore CA2000 
             return Wrap(result);
         }
 
@@ -593,9 +660,9 @@ namespace OpenCvSharp
         /// <param name="colRange">Start and end column of the extracted submatrix. 
         /// The upper boundary is not included. To select all the columns, use Range.All().</param>
         /// <returns></returns>
-        public new TInherit SubMat(Range rowRange, Range colRange)
+        public new Mat<TElem> SubMat(Range rowRange, Range colRange)
         {
-            return this.SubMat(rowRange.Start, rowRange.End, colRange.Start, colRange.End);
+            return SubMat(rowRange.Start, rowRange.End, colRange.Start, colRange.End);
         }
         
         /// <summary>
@@ -603,9 +670,9 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="roi">Extracted submatrix specified as a rectangle.</param>
         /// <returns></returns>
-        public new TInherit SubMat(Rect roi)
+        public new Mat<TElem> SubMat(Rect roi)
         {
-            return this.SubMat(roi.Y, roi.Y + roi.Height, roi.X, roi.X + roi.Width);
+            return SubMat(roi.Y, roi.Y + roi.Height, roi.X, roi.X + roi.Width);
         }
 
         /// <summary>
@@ -613,14 +680,16 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="ranges">Array of selected ranges along each array dimension.</param>
         /// <returns></returns>
-        public new TInherit SubMat(params Range[] ranges)
+        public new Mat<TElem> SubMat(params Range[] ranges)
         {
-            Mat result = base.SubMat(ranges);
+#pragma warning disable CA2000 
+            var result = base.SubMat(ranges);
+#pragma warning restore CA2000 
             return Wrap(result);
         }
 
-        #endregion
-        #region Mat Indexers
+#endregion
+#region Mat Indexers
         /// <summary>
         /// Extracts a rectangular submatrix.
         /// </summary>
@@ -629,17 +698,14 @@ namespace OpenCvSharp
         /// <param name="colStart">Start column of the extracted submatrix. The upper boundary is not included.</param>
         /// <param name="colEnd">End column of the extracted submatrix. The upper boundary is not included.</param>
         /// <returns></returns>
-        public new TInherit this[int rowStart, int rowEnd, int colStart, int colEnd]
+        public new Mat<TElem> this[int rowStart, int rowEnd, int colStart, int colEnd]
         {
             get
             {
-                Mat result = base[rowStart, rowEnd, colStart, colEnd];
+                var result = base[rowStart, rowEnd, colStart, colEnd];
                 return Wrap(result);
             }
-            set
-            {
-                base[rowStart, rowEnd, colStart, colEnd] = value;
-            }
+            set => base[rowStart, rowEnd, colStart, colEnd] = value;
         }
 
         /// <summary>
@@ -650,17 +716,14 @@ namespace OpenCvSharp
         /// <param name="colRange">Start and end column of the extracted submatrix. 
         /// The upper boundary is not included. To select all the columns, use Range.All().</param>
         /// <returns></returns>
-        public new TInherit this[Range rowRange, Range colRange]
+        public new Mat<TElem> this[Range rowRange, Range colRange]
         {
             get
             {
-                Mat result = base[rowRange, colRange];
+                var result = base[rowRange, colRange];
                 return Wrap(result);
             }
-            set
-            {
-                base[rowRange, colRange] = value;
-            }
+            set => base[rowRange, colRange] = value;
         }
 
         /// <summary>
@@ -668,17 +731,14 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="roi">Extracted submatrix specified as a rectangle.</param>
         /// <returns></returns>
-        public new TInherit this[Rect roi]
+        public new Mat<TElem> this[Rect roi]
         {
             get
             {
-                Mat result = base[roi];
+                var result = base[roi];
                 return Wrap(result);
             }
-            set
-            {
-                base[roi] = value;
-            }
+            set => base[roi] = value;
         }
 
         /// <summary>
@@ -686,28 +746,79 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="ranges">Array of selected ranges along each array dimension.</param>
         /// <returns></returns>
-        public new TInherit this[params Range[] ranges]
+        public new Mat<TElem> this[params Range[] ranges]
         {
             get
             {
-                Mat result = base[ranges];
+                var result = base[ranges];
                 return Wrap(result);
             }
-            set
-            {
-                base[ranges] = value;
-            }
+            set => base[ranges] = value;
         }
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
         #region ICollection<T>
+
         /// <summary>
         /// Adds elements to the bottom of the matrix. (Mat::push_back)
         /// </summary>
         /// <param name="value">Added element(s)</param>
-        public abstract void Add(TElem value);
+        public void Add(TElem value)
+        {
+            switch (value)
+            {
+                case byte byteValue:base.Add(byteValue);break;
+                case sbyte sbyteValue:base.Add(sbyteValue);break;
+                case ushort ushortValue:base.Add(ushortValue);break;
+                case short shortValue:base.Add(shortValue);break;
+                case int intValue:base.Add(intValue);break;
+                case float floatValue:base.Add(floatValue);break;
+                case double doubleValue:base.Add(doubleValue);break;
+                case Vec2b vec2BValue:base.Add(vec2BValue);break;
+                case Vec3b vec3BValue:base.Add(vec3BValue);break;
+                case Vec4b vec4BValue:base.Add(vec4BValue);break;
+                case Vec6b vec6BValue:base.Add(vec6BValue);break;
+                case Vec2w vec2WValue:base.Add(vec2WValue);break;
+                case Vec3w vec3WValue:base.Add(vec3WValue);break;
+                case Vec4w vec4WValue:base.Add(vec4WValue);break;
+                case Vec6w vec6WValue:base.Add(vec6WValue);break;
+                case Vec2s vec2SValue:base.Add(vec2SValue);break;
+                case Vec3s vec3SValue:base.Add(vec3SValue);break;
+                case Vec4s vec4SValue:base.Add(vec4SValue);break;
+                case Vec6s vec6SValue:base.Add(vec6SValue);break;
+                case Vec2i vec2IValue:base.Add(vec2IValue);break;
+                case Vec3i vec3IValue:base.Add(vec3IValue);break;
+                case Vec4i vec4IValue:base.Add(vec4IValue);break;
+                case Vec6i vec6IValue:base.Add(vec6IValue);break;
+                case Vec2f vec2FValue:base.Add(vec2FValue);break;
+                case Vec3f vec3FValue:base.Add(vec3FValue);break;
+                case Vec4f vec4FValue:base.Add(vec4FValue);break;
+                case Vec6f vec6FValue:base.Add(vec6FValue);break;
+                case Vec2d vec2dValue:base.Add(vec2dValue);break;
+                case Vec3d vec3dValue:base.Add(vec3dValue);break;
+                case Vec4d vec4dValue:base.Add(vec4dValue);break;
+                case Vec6d vec6dValue:base.Add(vec6dValue);break;
+                case Point pointValue:base.Add(pointValue);break;
+                case Point2d point2dValue:base.Add(point2dValue);break;
+                case Point2f point2FValue:base.Add(point2FValue);break;
+                case Point3i point3IValue:base.Add(point3IValue);break;
+                case Point3d point3dValue:base.Add(point3dValue);break;
+                case Point3f point3FValue:base.Add(point3FValue);break;
+                case Size sizeValue:base.Add(sizeValue);break;
+                case Size2f size2FValue:base.Add(size2FValue);break;
+                case Size2d size2dValue:base.Add(size2dValue);break;
+                case Rect rectValue:base.Add(rectValue);break;
+                case Rect2f rect2FValue:base.Add(rect2FValue);break;
+                case Rect2d rect2dValue:base.Add(rect2dValue);break;
+
+                default:
+                    throw new ArgumentException($"Not supported value type {typeof(TElem)}");
+            }
+
+            GC.KeepAlive(this);
+        }
 
         /// <summary>
         /// Removes the first occurrence of a specific object from the ICollection&lt;T&gt;.
@@ -737,7 +848,7 @@ namespace OpenCvSharp
         /// <returns>The index of value if found in the list; otherwise, -1.</returns>
         public int IndexOf(TElem item)
         {
-            TElem[] array = ToArray();
+            var array = ToArray();
             return Array.IndexOf(array, item);
         }
 
@@ -747,7 +858,9 @@ namespace OpenCvSharp
         public void Clear()
         {
             ThrowIfDisposed();
-            NativeMethods.core_Mat_pop_back(ptr, new IntPtr((long)Total()));
+            NativeMethods.HandleException(
+                NativeMethods.core_Mat_pop_back(ptr, new IntPtr(Total())));
+            GC.KeepAlive(this);
         }
 
         /// <summary>
@@ -761,8 +874,8 @@ namespace OpenCvSharp
             ThrowIfDisposed();
 
             if (array == null)
-                throw new ArgumentNullException("nameof(array)");
-            TElem[] result = ToArray();
+                throw new ArgumentNullException(nameof(array));
+            var result = ToArray();
             if (array.Length > result.Length + arrayIndex)
                 throw new ArgumentException("Too short array.Length");
             Array.Copy(result, 0, array, arrayIndex, result.Length);
@@ -777,7 +890,10 @@ namespace OpenCvSharp
             get
             {
                 ThrowIfDisposed();
-                return (int)NativeMethods.core_Mat_total(ptr);
+                NativeMethods.HandleException(
+                    NativeMethods.core_Mat_total1(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret.ToInt32();
             }
         }
 
@@ -785,7 +901,8 @@ namespace OpenCvSharp
         /// Gets a value indicating whether the IList is read-only.
         /// </summary>
         /// <returns></returns>
-        public bool IsReadOnly { get { return false; }}
-        #endregion
+        public bool IsReadOnly => false;
+
+#endregion
     }
 }

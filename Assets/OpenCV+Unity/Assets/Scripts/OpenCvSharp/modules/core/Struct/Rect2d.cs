@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
     /// <summary>
@@ -11,41 +13,42 @@ namespace OpenCvSharp
     public struct Rect2d : IEquatable<Rect2d>
     {
         #region Field
+
         /// <summary>
         /// 
         /// </summary>
         public double X;
+
         /// <summary>
         /// 
         /// </summary>
         public double Y;
+
         /// <summary>
         /// 
         /// </summary>
         public double Width;
+
         /// <summary>
         /// 
         /// </summary>
         public double Height;
-        /// <summary>
-        /// sizeof(Rect)
-        /// </summary>
-        public const int SizeOf = sizeof(double) * 4;
 
 #if LANG_JP
         /// <summary>
-        /// プロパティを初期化しない状態の CvRect 構造体を表します。 
+        /// プロパティを初期化しない状態の Rect2d 構造体を表します。 
         /// </summary>
 #else
         /// <summary>
         /// Represents a Rect2d structure with its properties left uninitialized. 
         /// </summary>
 #endif
-        public static readonly Rect2d Empty = new Rect2d();
+        public static readonly Rect2d Empty;
+
         #endregion
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
@@ -60,7 +63,7 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="location"></param>
         /// <param name="size"></param>
@@ -79,6 +82,7 @@ namespace OpenCvSharp
         /// <param name="top"></param>
         /// <param name="right"></param>
         /// <param name="bottom"></param>
+        // ReSharper disable once InconsistentNaming
         public static Rect2d FromLTRB(double left, double top, double right, double bottom)
         {
             var r = new Rect2d
@@ -97,24 +101,9 @@ namespace OpenCvSharp
         }
 
         #region Operators
+
         #region == / !=
-#if LANG_JP
-        /// <summary>
-        /// 指定したオブジェクトと等しければtrueを返す 
-        /// </summary>
-        /// <param name="obj">比較するオブジェクト</param>
-        /// <returns>型が同じで、メンバの値が等しければtrue</returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public bool Equals(Rect2d obj)
-        {
-            return (X == obj.X && Y == obj.Y && Width == obj.Width && Height == obj.Height);
-        }
+
 #if LANG_JP
         /// <summary>
         /// == 演算子のオーバーロード
@@ -134,6 +123,7 @@ namespace OpenCvSharp
         {
             return lhs.Equals(rhs);
         }
+
 #if LANG_JP
         /// <summary>
         /// != 演算子のオーバーロード
@@ -153,8 +143,11 @@ namespace OpenCvSharp
         {
             return !lhs.Equals(rhs);
         }
+
         #endregion
+
         #region + / -
+
 #if LANG_JP
         /// <summary>
         /// あるオフセットで矩形を移動させる
@@ -174,6 +167,7 @@ namespace OpenCvSharp
         {
             return new Rect2d(rect.X + pt.X, rect.Y + pt.Y, rect.Width, rect.Height);
         }
+
 #if LANG_JP
         /// <summary>
         /// あるオフセットで矩形を移動させる
@@ -213,6 +207,7 @@ namespace OpenCvSharp
         {
             return new Rect2d(rect.X, rect.Y, rect.Width + size.Width, rect.Height + size.Height);
         }
+
 #if LANG_JP
         /// <summary>
         /// 指定したサイズ応じて、矩形を膨張または縮小する
@@ -232,8 +227,11 @@ namespace OpenCvSharp
         {
             return new Rect2d(rect.X, rect.Y, rect.Width - size.Width, rect.Height - size.Height);
         }
+
         #endregion
+
         #region & / |
+
 #if LANG_JP
         /// <summary>
         /// 2つの矩形の交差部分を表す矩形を取得する
@@ -273,7 +271,9 @@ namespace OpenCvSharp
         {
             return Union(a, b);
         }
+
         #endregion
+
         #endregion
 
         #region Properties
@@ -302,7 +302,7 @@ namespace OpenCvSharp
 #endif
         public double Bottom
         {
-            get { return Y + Height - 1; }
+            get { return Y + Height; }
         }
 #if LANG_JP
         /// <summary>
@@ -329,7 +329,7 @@ namespace OpenCvSharp
 #endif
         public double Right
         {
-            get { return X + Width - 1; }
+            get { return X + Width; }
         }
 
 #if LANG_JP
@@ -393,11 +393,20 @@ namespace OpenCvSharp
 #endif
         public Point2d BottomRight
         {
-            get { return new Point2d(X + Width - 1, Y + Height - 1); }
+            get { return new Point2d(X + Width, Y + Height); }
         }
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public readonly Rect ToRect()
+        {
+            return new Rect((int) X, (int) Y, (int) Width, (int) Height);
+        }
 
 #if LANG_JP
         /// <summary>
@@ -414,9 +423,9 @@ namespace OpenCvSharp
         /// <param name="y">y-coordinate of the point</param>
         /// <returns></returns>
 #endif
-        public bool Contains(double x, double y)
+        public readonly bool Contains(double x, double y)
         {
-            return (X <= x && Y <= y && X + Width - 1 > x && Y + Height - 1 > y);
+            return (X <= x && Y <= y && X + Width > x && Y + Height > y);
         }
 
 #if LANG_JP
@@ -432,7 +441,7 @@ namespace OpenCvSharp
         /// <param name="pt">point</param>
         /// <returns></returns>
 #endif
-        public bool Contains(Point2d pt)
+        public readonly bool Contains(Point2d pt)
         {
             return Contains(pt.X, pt.Y);
         }
@@ -450,7 +459,7 @@ namespace OpenCvSharp
         /// <param name="rect">rectangle</param>
         /// <returns></returns>
 #endif
-        public bool Contains(Rect2d rect)
+        public readonly bool Contains(Rect2d rect)
         {
             return X <= rect.X &&
                    (rect.X + rect.Width) <= (X + Width) &&
@@ -492,7 +501,6 @@ namespace OpenCvSharp
 #endif
         public void Inflate(Size2d size)
         {
-
             Inflate(size.Width, size.Height);
         }
 
@@ -536,10 +544,10 @@ namespace OpenCvSharp
 #endif
         public static Rect2d Intersect(Rect2d a, Rect2d b)
         {
-            double x1 = Math.Max(a.X, b.X);
-            double x2 = Math.Min(a.X + a.Width, b.X + b.Width);
-            double y1 = Math.Max(a.Y, b.Y);
-            double y2 = Math.Min(a.Y + a.Height, b.Y + b.Height);
+            var x1 = Math.Max(a.X, b.X);
+            var x2 = Math.Min(a.X + a.Width, b.X + b.Width);
+            var y1 = Math.Max(a.Y, b.Y);
+            var y2 = Math.Min(a.Y + a.Height, b.Y + b.Height);
 
             if (x2 >= x1 && y2 >= y1)
                 return new Rect2d(x1, y1, x2 - x1, y2 - y1);
@@ -559,7 +567,7 @@ namespace OpenCvSharp
         /// <param name="rect">A rectangle to intersect. </param>
         /// <returns></returns>
 #endif
-        public Rect2d Intersect(Rect2d rect)
+        public readonly Rect2d Intersect(Rect2d rect)
         {
             return Intersect(this, rect);
         }
@@ -577,14 +585,13 @@ namespace OpenCvSharp
         /// <param name="rect">Rectangle</param>
         /// <returns></returns>
 #endif
-        public bool IntersectsWith(Rect2d rect)
+        public readonly bool IntersectsWith(Rect2d rect)
         {
-            return (
+            return 
                 (X < rect.X + rect.Width) &&
                 (X + Width > rect.X) &&
                 (Y < rect.Y + rect.Height) &&
-                (Y + Height > rect.Y)
-            );
+                (Y + Height > rect.Y);
         }
 
 #if LANG_JP
@@ -600,7 +607,7 @@ namespace OpenCvSharp
         /// <param name="rect">A rectangle to union. </param>
         /// <returns></returns>
 #endif
-        public Rect2d Union(Rect2d rect)
+        public readonly Rect2d Union(Rect2d rect)
         {
             return Union(this, rect);
         }
@@ -622,62 +629,43 @@ namespace OpenCvSharp
 #endif
         public static Rect2d Union(Rect2d a, Rect2d b)
         {
-            double x1 = Math.Min(a.X, b.X);
-            double x2 = Math.Max(a.X + a.Width, b.X + b.Width);
-            double y1 = Math.Min(a.Y, b.Y);
-            double y2 = Math.Max(a.Y + a.Height, b.Y + b.Height);
+            var x1 = Math.Min(a.X, b.X);
+            var x2 = Math.Max(a.X + a.Width, b.X + b.Width);
+            var y1 = Math.Min(a.Y, b.Y);
+            var y2 = Math.Max(a.Y + a.Height, b.Y + b.Height);
 
             return new Rect2d(x1, y1, x2 - x1, y2 - y1);
         }
-
-#if LANG_JP
-        /// <summary>
-        /// Equalsのオーバーライド
-        /// </summary>
-        /// <param name="obj">比較するオブジェクト</param>
-        /// <returns></returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public override bool Equals(object obj)
+        
+        /// <inheritdoc />
+        public readonly bool Equals(Rect2d other)
         {
-            return base.Equals(obj);
+            return X.Equals(other.X) && Y.Equals(other.Y) && Width.Equals(other.Width) && Height.Equals(other.Height);
+        }
+        
+        /// <inheritdoc />
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is Rect2d other && Equals(other);
+        }
+        
+        /// <inheritdoc />
+        public override readonly int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = X.GetHashCode();
+                hashCode = (hashCode * 397) ^ Y.GetHashCode();
+                hashCode = (hashCode * 397) ^ Width.GetHashCode();
+                hashCode = (hashCode * 397) ^ Height.GetHashCode();
+                return hashCode;
+            }
         }
 
-#if LANG_JP
-        /// <summary>
-        /// GetHashCodeのオーバーライド
-        /// </summary>
-        /// <returns>このオブジェクトのハッシュ値を指定する整数値。</returns>
-#else
-        /// <summary>
-        /// Returns a hash code for this object.
-        /// </summary>
-        /// <returns>An integer value that specifies a hash value for this object.</returns>
-#endif
-        public override int GetHashCode()
+        /// <inheritdoc />
+        public override readonly string ToString()
         {
-            return X.GetHashCode() ^ Y.GetHashCode() ^ Width.GetHashCode() ^ Height.GetHashCode();
-        }
-
-#if LANG_JP
-        /// <summary>
-        /// 文字列形式を返す 
-        /// </summary>
-        /// <returns>文字列形式</returns>
-#else
-        /// <summary>
-        /// Converts this object to a human readable string.
-        /// </summary>
-        /// <returns>A string that represents this object.</returns>
-#endif
-        public override string ToString()
-        {
-            return string.Format("(x:{0} y:{1} width:{2} height:{3})", X, Y, Width, Height);
+            return $"(x:{X} y:{Y} width:{Width} height:{Height})";
         }
 
         #endregion

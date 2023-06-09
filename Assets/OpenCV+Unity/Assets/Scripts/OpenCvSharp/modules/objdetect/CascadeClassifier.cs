@@ -1,14 +1,11 @@
 ﻿
 using System;
 using System.IO;
-// using OpenCvSharp.Internal;
-// using OpenCvSharp.Internal.Vectors;
 
 // ReSharper disable InconsistentNaming
 
 namespace OpenCvSharp
 {
-
     /// <summary>
     /// Cascade classifier class for object detection.
     /// </summary>
@@ -34,7 +31,7 @@ namespace OpenCvSharp
             if (string.IsNullOrEmpty(fileName))
                 throw new ArgumentNullException(nameof(fileName));
             if (!File.Exists(fileName))
-                throw new FileNotFoundException("\"" + fileName + "\"not found", fileName);
+                throw new FileNotFoundException("\""+ fileName + "\"not found", fileName);
 
             NativeMethods.HandleException(
                 NativeMethods.objdetect_CascadeClassifier_newFromFile(fileName, out ptr));
@@ -89,25 +86,6 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// Reads a classifier parameters from a file storage
-        /// </summary>
-        /// <param name="fn"></param>
-        public virtual bool Read(FileNode fn)
-        {
-            if (ptr == IntPtr.Zero)
-                throw new ObjectDisposedException(GetType().Name);
-            if (fn == null)
-                throw new ArgumentNullException(nameof(fn));
-
-            NativeMethods.HandleException(
-                NativeMethods.objdetect_CascadeClassifier_read(ptr, fn.CvPtr, out var ret));
-            GC.KeepAlive(this);
-            GC.KeepAlive(fn);
-
-            return ret != 0;
-        }
-
-        /// <summary>
         /// Detects objects of different sizes in the input image. The detected objects are returned as a list of rectangles.
         /// </summary>
         /// <param name="image">Matrix of the type CV_8U containing an image where objects are detected.</param>
@@ -122,7 +100,7 @@ namespace OpenCvSharp
             Mat image,
             double scaleFactor = 1.1,
             int minNeighbors = 3,
-            HaarDetectionTypes flags = 0,
+            HaarDetectionType flags = 0,
             Size? minSize = null,
             Size? maxSize = null)
         {
@@ -138,7 +116,7 @@ namespace OpenCvSharp
             NativeMethods.HandleException(
                 NativeMethods.objdetect_CascadeClassifier_detectMultiScale1(
                     ptr, image.CvPtr, objectsVec.CvPtr,
-                    scaleFactor, minNeighbors, (int)flags, minSize0, maxSize0));
+                    scaleFactor, minNeighbors, (int) flags, minSize0, maxSize0));
 
             GC.KeepAlive(this);
             GC.KeepAlive(image);
@@ -165,7 +143,7 @@ namespace OpenCvSharp
             out double[] levelWeights,
             double scaleFactor = 1.1,
             int minNeighbors = 3,
-            HaarDetectionTypes flags = 0,
+            HaarDetectionType flags = 0,
             Size? minSize = null,
             Size? maxSize = null,
             bool outputRejectLevels = false)
@@ -184,7 +162,7 @@ namespace OpenCvSharp
             NativeMethods.HandleException(
                 NativeMethods.objdetect_CascadeClassifier_detectMultiScale2(
                     ptr, image.CvPtr, objectsVec.CvPtr, rejectLevelsVec.CvPtr, levelWeightsVec.CvPtr,
-                    scaleFactor, minNeighbors, (int)flags, minSize0, maxSize0, outputRejectLevels ? 1 : 0));
+                    scaleFactor, minNeighbors, (int) flags, minSize0, maxSize0, outputRejectLevels ? 1 : 0));
 
             GC.KeepAlive(this);
             GC.KeepAlive(image);
@@ -235,4 +213,5 @@ namespace OpenCvSharp
 
         #endregion
     }
+
 }

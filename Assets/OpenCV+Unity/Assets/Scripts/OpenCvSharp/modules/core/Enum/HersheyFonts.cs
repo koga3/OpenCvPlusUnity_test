@@ -4,9 +4,9 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// フォント名の識別子．現在はHershey fontsの一部のみサポートされている. 
-	/// フォント名のフラグにはイタリックフラグ(Italic)を合成することができる.
-	/// </summary>
+    /// フォント名の識別子．現在はHershey fontsの一部のみサポートされている. 
+    /// フォント名のフラグにはイタリックフラグ(Italic)を合成することができる.
+    /// </summary>
 #else
     /// <summary>
     /// Font name identifier. 
@@ -14,7 +14,7 @@ namespace OpenCvSharp
     /// </summary>
 #endif
     [Flags]
-    public enum HersheyFonts : int
+    public enum HersheyFonts
     {
         /// <summary>
         /// normal size sans-serif font

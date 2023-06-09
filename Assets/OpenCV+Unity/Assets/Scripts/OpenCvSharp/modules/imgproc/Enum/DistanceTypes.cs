@@ -3,14 +3,14 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// cvDistTransformで指定する距離の種類
-	/// </summary>
+    /// cvDistTransformで指定する距離の種類
+    /// </summary>
 #else
     /// <summary>
     /// Type of distance for cvDistTransform
     /// </summary>
 #endif
-    public enum DistanceTypes : int
+    public enum DistanceTypes
     {
         /// <summary>
         /// User defined distance  [CV_DIST_USER]

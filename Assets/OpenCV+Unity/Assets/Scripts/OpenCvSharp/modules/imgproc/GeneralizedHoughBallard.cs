@@ -9,19 +9,17 @@ namespace OpenCvSharp
     /// </summary>
     public class GeneralizedHoughBallard : GeneralizedHough
     {
-        private bool disposed;
-
         /// <summary>
         /// cv::Ptr&lt;T&gt; object
         /// </summary>
-        private Ptr<GeneralizedHoughBallard> ptrObj;
+        private Ptr? ptrObj;
 
         /// <summary>
         /// 
         /// </summary>
         private GeneralizedHoughBallard(IntPtr p)
         {
-            ptrObj = new Ptr<GeneralizedHoughBallard>(p);
+            ptrObj = new Ptr(p);
             ptr = ptrObj.Get();
         }
 
@@ -31,52 +29,19 @@ namespace OpenCvSharp
         /// <returns></returns>
         public static GeneralizedHoughBallard Create()
         {
-            IntPtr ptr = NativeMethods.imgproc_createGeneralizedHoughBallard();
+            NativeMethods.HandleException(
+                NativeMethods.imgproc_createGeneralizedHoughBallard(out var ptr));
             return new GeneralizedHoughBallard(ptr);
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Releases the resources
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                    }
-                    // releases unmanaged resources
-                    if (IsEnabledDispose)
-                    {
-                        if (ptrObj != null)
-                            ptrObj.Dispose();
-                        ptrObj = null;
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
         }
 
         /// <summary>
@@ -87,15 +52,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (ptr == IntPtr.Zero)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_GeneralizedHoughBallard_getLevels(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_GeneralizedHoughBallard_getLevels(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (ptr == IntPtr.Zero)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.imgproc_GeneralizedHoughBallard_setLevels(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_GeneralizedHoughBallard_setLevels(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -108,15 +76,40 @@ namespace OpenCvSharp
         {
             get
             {
-                if (ptr == IntPtr.Zero)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_GeneralizedHoughBallard_getVotesThreshold(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_GeneralizedHoughBallard_getVotesThreshold(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (ptr == IntPtr.Zero)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.imgproc_GeneralizedHoughBallard_setVotesThreshold(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_GeneralizedHoughBallard_setVotesThreshold(ptr, value));
+                GC.KeepAlive(this);
+            }
+        }
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_Ptr_GeneralizedHoughBallard_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_Ptr_GeneralizedHoughBallard_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
     }

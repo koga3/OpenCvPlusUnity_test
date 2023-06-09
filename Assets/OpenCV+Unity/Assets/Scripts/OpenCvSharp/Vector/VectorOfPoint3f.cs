@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using OpenCvSharp.Util;
 
 namespace OpenCvSharp
@@ -7,21 +9,15 @@ namespace OpenCvSharp
     /// <summary>
     /// 
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public class VectorOfPoint3f : DisposableCvObject, IStdVector<Point3f>
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed = false;
-
-        #region Init and Dispose
-
         /// <summary>
         /// 
         /// </summary>
         public VectorOfPoint3f()
         {
-            ptr = NativeMethods.vector_Point2f_new1();
+            ptr = NativeMethods.vector_Point3f_new1();
         }
 
         /// <summary>
@@ -31,7 +27,7 @@ namespace OpenCvSharp
         public VectorOfPoint3f(int size)
         {
             if (size < 0)
-                throw new ArgumentOutOfRangeException("nameof(size)");
+                throw new ArgumentOutOfRangeException(nameof(size));
             ptr = NativeMethods.vector_Point3f_new2(new IntPtr(size));
         }
 
@@ -42,47 +38,31 @@ namespace OpenCvSharp
         public VectorOfPoint3f(IEnumerable<Point3f> data)
         {
             if (data == null)
-                throw new ArgumentNullException("nameof(data)");
-            Point3f[] array = EnumerableEx.ToArray(data);
+                throw new ArgumentNullException(nameof(data));
+            var array = data.ToArray();
             ptr = NativeMethods.vector_Point3f_new3(array, new IntPtr(array.Length));
         }
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-        protected override void Dispose(bool disposing)
+        protected override void DisposeUnmanaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (IsEnabledDispose)
-                    {
-                        NativeMethods.vector_Point3f_delete(ptr);
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.vector_Point3f_delete(ptr);
+            base.DisposeUnmanaged();
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// vector.size()
         /// </summary>
         public int Size
         {
-            get { return NativeMethods.vector_Point3f_getSize(ptr).ToInt32(); }
+            get
+            {
+                var res = NativeMethods.vector_Point3f_getSize(ptr).ToInt32();
+                GC.KeepAlive(this);
+                return res;
+            }
         }
 
         /// <summary>
@@ -90,12 +70,13 @@ namespace OpenCvSharp
         /// </summary>
         public IntPtr ElemPtr
         {
-            get { return NativeMethods.vector_Point3f_getPointer(ptr); }
+            get
+            {
+                var res = NativeMethods.vector_Point3f_getPointer(ptr);
+                GC.KeepAlive(this);
+                return res;
+            }
         }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Converts std::vector to managed array
@@ -103,19 +84,19 @@ namespace OpenCvSharp
         /// <returns></returns>
         public Point3f[] ToArray()
         {
-            int size = Size;
+            var size = Size;
             if (size == 0)
             {
-                return new Point3f[0];
+                return Array.Empty<Point3f>();
             }
-            Point3f[] dst = new Point3f[size];
-            using (ArrayAddress1<Point3f> dstPtr = new ArrayAddress1<Point3f>(dst))
+            var dst = new Point3f[size];
+            using (var dstPtr = new ArrayAddress1<Point3f>(dst))
             {
-                Util.Utility.CopyMemory(dstPtr, ElemPtr, Point3f.SizeOf*dst.Length);
+                MemoryHelper.CopyMemory(dstPtr.Pointer, ElemPtr, Marshal.SizeOf<Point3f>() * dst.Length);
             }
+            GC.KeepAlive(this); // ElemPtr is IntPtr to memory held by this object, so
+                                // make sure we are not disposed until finished with copy.
             return dst;
         }
-
-        #endregion
     }
 }

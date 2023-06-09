@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenCvSharp
 {
@@ -9,49 +7,41 @@ namespace OpenCvSharp
     /// </summary>
     /// <remarks>operations.hpp</remarks>
     // ReSharper disable once InconsistentNaming
-    public class RNG_MT19937
+    public struct RNG_MT19937
     {
-        private static class PeriodParameters
-        {
-            public const int N = 624, M = 397;
-        }
+        private const int N = 624, M = 397;
+        
         private readonly uint[] state;
         private int mti;
 
-        #region Init & Disposal
-
         /// <summary>
-        /// 
-        /// </summary>
-        public RNG_MT19937()
-            : this(5489U)
-        {
-        }
-
-        /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="s"></param>
-        public RNG_MT19937(uint s)
+        public RNG_MT19937(uint s = 5489U)
         {
-            state = new uint[PeriodParameters.N];
+            state = new uint[N];
+            mti = 0;
             Seed(s);
         }
-
-        #endregion
-
+        
         #region Cast
 
-        /// <summary>
-        /// 
+        /// <summary> 
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
         public static explicit operator uint(RNG_MT19937 self)
         {
-            if (self == null)
-                throw new ArgumentNullException("nameof(self)");
             return self.Next();
+        }
+
+        /// <summary> 
+        /// </summary>
+        /// <returns></returns>
+        public uint ToUInt32()
+        {
+            return Next();
         }
 
         /// <summary>
@@ -61,9 +51,15 @@ namespace OpenCvSharp
         /// <returns></returns>
         public static explicit operator int(RNG_MT19937 self)
         {
-            if (self == null)
-                throw new ArgumentNullException("nameof(self)");
-            return (int)self.Next();
+            return self.ToInt32();
+        }
+
+        /// <summary> 
+        /// </summary>
+        /// <returns></returns>
+        public int ToInt32()
+        {
+            return (int)Next();
         }
 
         /// <summary>
@@ -73,9 +69,15 @@ namespace OpenCvSharp
         /// <returns></returns>
         public static explicit operator float(RNG_MT19937 self)
         {
-            if (self == null)
-                throw new ArgumentNullException("nameof(self)");
-            return self.Next() * (1.0f / 4294967296.0f);
+            return self.ToSingle();
+        }
+        
+        /// <summary> 
+        /// </summary>
+        /// <returns></returns>
+        public float ToSingle()
+        {
+            return Next() * (1.0f / 4294967296.0f);
         }
 
         /// <summary>
@@ -85,10 +87,16 @@ namespace OpenCvSharp
         /// <returns></returns>
         public static explicit operator double(RNG_MT19937 self)
         {
-            if (self == null)
-                throw new ArgumentNullException("nameof(self)");
-            uint a = self.Next() >> 5;
-            uint b = self.Next() >> 6;
+            return self.ToDouble();
+        }
+        
+        /// <summary> 
+        /// </summary>
+        /// <returns></returns>
+        public double ToDouble()
+        {
+            var a = Next() >> 5;
+            var b = Next() >> 6;
             return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
         }
 
@@ -103,7 +111,7 @@ namespace OpenCvSharp
         public void Seed(uint s)
         {
             state[0] = s;
-            for (mti = 1; mti < PeriodParameters.N; mti++)
+            for (mti = 1; mti < N; mti++)
             {
                 /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
                 state[mti] = (uint) (1812433253U * (state[mti - 1] ^ (state[mti - 1] >> 30)) + mti);
@@ -119,31 +127,31 @@ namespace OpenCvSharp
             /* mag01[x] = x * MATRIX_A  for x=0,1 */
             uint[] mag01 = { 0x0U, /*MATRIX_A*/ 0x9908b0dfU };
 
-            const uint UPPER_MASK = 0x80000000U;
-            const uint LOWER_MASK = 0x7fffffffU;
-            const int N = PeriodParameters.N;
-            const int M = PeriodParameters.M;
+            const uint upperMask = 0x80000000U;
+            const uint lowerMask = 0x7fffffffU;
+            const int n = N;
+            const int m = M;
 
             /* generate N words at one time */
             uint y;
-            if (mti >= N)
+            if (mti >= n)
             {
-                int kk = 0;
+                var kk = 0;
 
-                for (; kk < N - M; ++kk)
+                for (; kk < n - m; ++kk)
                 {
-                    y = (state[kk] & UPPER_MASK) | (state[kk + 1] & LOWER_MASK);
-                    state[kk] = state[kk + M] ^ (y >> 1) ^ mag01[y & 0x1U];
+                    y = (state[kk] & upperMask) | (state[kk + 1] & lowerMask);
+                    state[kk] = state[kk + m] ^ (y >> 1) ^ mag01[y & 0x1U];
                 }
 
-                for (; kk < N - 1; ++kk)
+                for (; kk < n - 1; ++kk)
                 {
-                    y = (state[kk] & UPPER_MASK) | (state[kk + 1] & LOWER_MASK);
-                    state[kk] = state[kk + (M - N)] ^ (y >> 1) ^ mag01[y & 0x1U];
+                    y = (state[kk] & upperMask) | (state[kk + 1] & lowerMask);
+                    state[kk] = state[kk + (m - n)] ^ (y >> 1) ^ mag01[y & 0x1U];
                 }
 
-                y = (state[N - 1] & UPPER_MASK) | (state[0] & LOWER_MASK);
-                state[N - 1] = state[M - 1] ^ (y >> 1) ^ mag01[y & 0x1U];
+                y = (state[n - 1] & upperMask) | (state[0] & lowerMask);
+                state[n - 1] = state[m - 1] ^ (y >> 1) ^ mag01[y & 0x1U];
 
                 mti = 0;
             }
@@ -210,7 +218,7 @@ namespace OpenCvSharp
         {
             return ((double)this) * (b - a) + a;
         }
-
+        
         #endregion
     }
 }

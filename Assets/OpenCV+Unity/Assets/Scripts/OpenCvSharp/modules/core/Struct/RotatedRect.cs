@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
     /// <summary>
-    /// 
+    /// The class represents rotated (i.e. not up-right) rectangles on a plane.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct RotatedRect
@@ -25,7 +27,7 @@ namespace OpenCvSharp
         public float Angle;
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="center"></param>
         /// <param name="size"></param>
@@ -41,13 +43,13 @@ namespace OpenCvSharp
         /// returns 4 vertices of the rectangle
         /// </summary>
         /// <returns></returns>
-        public Point2f[] Points()
+        public readonly Point2f[] Points()
         {
-            double angle = Angle*Math.PI/180.0;
-            float b = (float) Math.Cos(angle)*0.5f;
-            float a = (float) Math.Sin(angle)*0.5f;
+            var angle = Angle*Math.PI/180.0;
+            var b = (float) Math.Cos(angle)*0.5f;
+            var a = (float) Math.Sin(angle)*0.5f;
 
-            Point2f[] pt = new Point2f[4];
+            var pt = new Point2f[4];
             pt[0].X = Center.X - a*Size.Height - b*Size.Width;
             pt[0].Y = Center.Y + b*Size.Height - a*Size.Width;
             pt[1].X = Center.X + a*Size.Height - b*Size.Width;
@@ -63,10 +65,10 @@ namespace OpenCvSharp
         /// returns the minimal up-right rectangle containing the rotated rectangle
         /// </summary>
         /// <returns></returns>
-        public Rect BoundingRect()
+        public readonly Rect BoundingRect()
         {
-            Point2f[] pt = Points();
-            Rect r = new Rect
+            var pt = Points();
+            var r = new Rect
             {
                 X = (int)Math.Floor(Math.Min(Math.Min(Math.Min(pt[0].X, pt[1].X), pt[2].X), pt[3].X)),
                 Y = (int)Math.Floor(Math.Min(Math.Min(Math.Min(pt[0].Y, pt[1].Y), pt[2].Y), pt[3].Y)),

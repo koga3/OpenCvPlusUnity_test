@@ -6,15 +6,15 @@ namespace OpenCvSharp
 
 #if LANG_JP
     /// <summary>
-	/// 正規化のタイプ
-	/// </summary>
+    /// 正規化のタイプ
+    /// </summary>
 #else
     /// <summary>
     /// Type of norm
     /// </summary>
 #endif
     [Flags]
-    public enum NormTypes : int
+    public enum NormTypes
     {
         /// <summary>
         /// 
@@ -32,7 +32,6 @@ namespace OpenCvSharp
         /// </summary>
 #endif
         L1 = 2,
-
 
 #if LANG_JP
         /// <summary>

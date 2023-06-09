@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace OpenCvSharp
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
+    // ReSharper disable once InconsistentNaming
     public struct Size2f : IEquatable<Size2f>
     {
         /// <summary>
@@ -21,7 +24,7 @@ namespace OpenCvSharp
         public float Height;
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="width"></param>
         /// <param name="height"></param>
@@ -32,35 +35,17 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="width"></param>
         /// <param name="height"></param>
         public Size2f(double width, double height)
         {
-            Width = (int) width;
-            Height = (int) height;
+            Width = (float) width;
+            Height = (float) height;
         }
 
         #region Operators
-
-#if LANG_JP
-    /// <summary>
-    /// 指定したオブジェクトと等しければtrueを返す 
-    /// </summary>
-    /// <param name="obj">比較するオブジェクト</param>
-    /// <returns>型が同じで、メンバの値が等しければtrue</returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public bool Equals(Size2f obj)
-        {
-            return (Width == obj.Width && Height == obj.Height);
-        }
 
 #if LANG_JP
     /// <summary>
@@ -105,57 +90,35 @@ namespace OpenCvSharp
         #endregion
 
         #region Override
-
-#if LANG_JP
-    /// <summary>
-    /// Equalsのオーバーライド
-    /// </summary>
-    /// <param name="obj">比較するオブジェクト</param>
-    /// <returns></returns>
-#else
-        /// <summary>
-        /// Specifies whether this object contains the same members as the specified Object.
-        /// </summary>
-        /// <param name="obj">The Object to test.</param>
-        /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
-#endif
-        public override bool Equals(object obj)
+        
+        /// <inheritdoc />
+        public readonly bool Equals(Size2f other)
         {
-            return base.Equals(obj);
+            return Width.Equals(other.Width) && Height.Equals(other.Height);
+        }
+        
+        /// <inheritdoc />
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is Size2f other && Equals(other);
+        }
+        
+        /// <inheritdoc />
+        public override readonly int GetHashCode()
+        {
+            unchecked
+            {
+                return (Width.GetHashCode() * 397) ^ Height.GetHashCode();
+            }
         }
 
-#if LANG_JP
-    /// <summary>
-    /// GetHashCodeのオーバーライド
-    /// </summary>
-    /// <returns>このオブジェクトのハッシュ値を指定する整数値。</returns>
-#else
-        /// <summary>
-        /// Returns a hash code for this object.
-        /// </summary>
-        /// <returns>An integer value that specifies a hash value for this object.</returns>
-#endif
-        public override int GetHashCode()
+        /// <inheritdoc />
+        public override readonly string ToString()
         {
-            return Width.GetHashCode() ^ Height.GetHashCode();
-        }
-
-#if LANG_JP
-    /// <summary>
-    /// 文字列形式を返す 
-    /// </summary>
-    /// <returns>文字列形式</returns>
-#else
-        /// <summary>
-        /// Converts this object to a human readable string.
-        /// </summary>
-        /// <returns>A string that represents this object.</returns>
-#endif
-        public override string ToString()
-        {
-            return string.Format("(width:{0} height:{1})", Width, Height);
+            return $"(width:{Width} height:{Height})";
         }
 
         #endregion
+
     }
 }

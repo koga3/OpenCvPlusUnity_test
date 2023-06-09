@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace OpenCvSharp
 {
@@ -18,12 +17,14 @@ namespace OpenCvSharp
             InputArray probImage, ref Rect window, TermCriteria criteria)
         {
             if (probImage == null)
-                throw new ArgumentNullException("nameof(probImage)");
+                throw new ArgumentNullException(nameof(probImage));
             probImage.ThrowIfDisposed();
 
-            RotatedRect result = NativeMethods.video_CamShift(
-                probImage.CvPtr, ref window, criteria);
-            return result;
+            NativeMethods.HandleException(
+                NativeMethods.video_CamShift(
+                    probImage.CvPtr, ref window, criteria, out var ret));
+            GC.KeepAlive(probImage);
+            return ret;
         }
 
         /// <summary>
@@ -37,12 +38,14 @@ namespace OpenCvSharp
             InputArray probImage, ref Rect window, TermCriteria criteria)
         {
             if (probImage == null)
-                throw new ArgumentNullException("nameof(probImage)");
+                throw new ArgumentNullException(nameof(probImage));
             probImage.ThrowIfDisposed();
 
-            int result = NativeMethods.video_meanShift(
-                probImage.CvPtr, ref window, criteria);
-            return result;
+            NativeMethods.HandleException(
+                NativeMethods.video_meanShift(
+                    probImage.CvPtr, ref window, criteria, out var ret));
+            GC.KeepAlive(probImage);
+            return ret;
         }
 
         /// <summary>
@@ -71,17 +74,19 @@ namespace OpenCvSharp
             bool tryReuseInputImage = true)
         {
             if (img == null)
-                throw new ArgumentNullException("nameof(img)");
+                throw new ArgumentNullException(nameof(img));
             if (pyramid == null)
-                throw new ArgumentNullException("nameof(pyramid)");
+                throw new ArgumentNullException(nameof(pyramid));
             img.ThrowIfDisposed();
             pyramid.ThrowIfNotReady();
 
-            int result = NativeMethods.video_buildOpticalFlowPyramid1(
-                img.CvPtr, pyramid.CvPtr, winSize, maxLevel, withDerivatives ? 1 : 0, 
-                (int)pyrBorder, (int)derivBorder, tryReuseInputImage ? 1 : 0);
+            NativeMethods.HandleException(
+                NativeMethods.video_buildOpticalFlowPyramid1(
+                    img.CvPtr, pyramid.CvPtr, winSize, maxLevel, withDerivatives ? 1 : 0,
+                    (int) pyrBorder, (int) derivBorder, tryReuseInputImage ? 1 : 0, out var ret));
             pyramid.Fix();
-            return result;
+            GC.KeepAlive(img);
+            return ret;
         }
 
         /// <summary>
@@ -110,17 +115,17 @@ namespace OpenCvSharp
             bool tryReuseInputImage = true)
         {
             if (img == null)
-                throw new ArgumentNullException("nameof(img)");
+                throw new ArgumentNullException(nameof(img));
             img.ThrowIfDisposed();
 
-            using (var pyramidVec = new VectorOfMat())
-            {
-                int result = NativeMethods.video_buildOpticalFlowPyramid2(
+            using var pyramidVec = new VectorOfMat();
+            NativeMethods.HandleException(
+                NativeMethods.video_buildOpticalFlowPyramid2(
                     img.CvPtr, pyramidVec.CvPtr, winSize, maxLevel, withDerivatives ? 1 : 0,
-                    (int) pyrBorder, (int) derivBorder, tryReuseInputImage ? 1 : 0);
-                pyramid = pyramidVec.ToArray();
-                return result;
-            }
+                    (int) pyrBorder, (int) derivBorder, tryReuseInputImage ? 1 : 0, out var ret));
+            GC.KeepAlive(img);
+            pyramid = pyramidVec.ToArray();
+            return ret;
         }
 
         /// <summary>
@@ -148,17 +153,17 @@ namespace OpenCvSharp
             double minEigThreshold = 1e-4)
         {
             if (prevImg == null)
-                throw new ArgumentNullException("nameof(prevImg)");
+                throw new ArgumentNullException(nameof(prevImg));
             if (nextImg == null)
-                throw new ArgumentNullException("nameof(nextImg)");
+                throw new ArgumentNullException(nameof(nextImg));
             if (prevPts == null)
-                throw new ArgumentNullException("nameof(prevPts)");
+                throw new ArgumentNullException(nameof(prevPts));
             if (nextPts == null)
-                throw new ArgumentNullException("nameof(nextPts)");
+                throw new ArgumentNullException(nameof(nextPts));
             if (status == null)
-                throw new ArgumentNullException("nameof(status)");
+                throw new ArgumentNullException(nameof(status));
             if (err == null)
-                throw new ArgumentNullException("nameof(err)");
+                throw new ArgumentNullException(nameof(err));
             prevImg.ThrowIfDisposed();
             nextImg.ThrowIfDisposed();
             prevPts.ThrowIfDisposed();
@@ -166,15 +171,18 @@ namespace OpenCvSharp
             status.ThrowIfNotReady();
             err.ThrowIfNotReady();
 
-            Size winSize0 = winSize.GetValueOrDefault(new Size(21, 21));
-            TermCriteria criteria0 = criteria.GetValueOrDefault(
+            var winSize0 = winSize.GetValueOrDefault(new Size(21, 21));
+            var criteria0 = criteria.GetValueOrDefault(
                 TermCriteria.Both(30, 0.01));
 
-            NativeMethods.video_calcOpticalFlowPyrLK_InputArray(
-                prevImg.CvPtr, nextImg.CvPtr, prevPts.CvPtr, nextPts.CvPtr,
-                status.CvPtr, err.CvPtr, winSize0,maxLevel,
-                criteria0, (int)flags, minEigThreshold);
-
+            NativeMethods.HandleException(
+                NativeMethods.video_calcOpticalFlowPyrLK_InputArray(
+                    prevImg.CvPtr, nextImg.CvPtr, prevPts.CvPtr, nextPts.CvPtr,
+                    status.CvPtr, err.CvPtr, winSize0, maxLevel,
+                    criteria0, (int) flags, minEigThreshold));
+            GC.KeepAlive(prevImg);
+            GC.KeepAlive(nextImg);
+            GC.KeepAlive(prevPts);
             nextPts.Fix();
             status.Fix();
             err.Fix();
@@ -194,9 +202,12 @@ namespace OpenCvSharp
         /// <param name="flags"></param>
         /// <param name="minEigThreshold"></param>
         public static void CalcOpticalFlowPyrLK(
-            InputArray prevImg, InputArray nextImg,
-            Point2f[] prevPts, ref Point2f[] nextPts,
-            out byte[] status, out float[] err,
+            InputArray prevImg, 
+            InputArray nextImg,
+            Point2f[] prevPts, 
+            ref Point2f[] nextPts,
+            out byte[] status, 
+            out float[] err,
             Size? winSize = null,
             int maxLevel = 3,
             TermCriteria? criteria = null,
@@ -204,32 +215,33 @@ namespace OpenCvSharp
             double minEigThreshold = 1e-4)
         {
             if (prevImg == null)
-                throw new ArgumentNullException("nameof(prevImg)");
+                throw new ArgumentNullException(nameof(prevImg));
             if (nextImg == null)
-                throw new ArgumentNullException("nameof(nextImg)");
+                throw new ArgumentNullException(nameof(nextImg));
             if (prevPts == null)
-                throw new ArgumentNullException("nameof(prevPts)");
+                throw new ArgumentNullException(nameof(prevPts));
             if (nextPts == null)
-                throw new ArgumentNullException("nameof(nextPts)");
+                throw new ArgumentNullException(nameof(nextPts));
             prevImg.ThrowIfDisposed();
             nextImg.ThrowIfDisposed();
 
-            Size winSize0 = winSize.GetValueOrDefault(new Size(21, 21));
-            TermCriteria criteria0 = criteria.GetValueOrDefault(
+            var winSize0 = winSize.GetValueOrDefault(new Size(21, 21));
+            var criteria0 = criteria.GetValueOrDefault(
                 TermCriteria.Both(30, 0.01));
 
-            using (var nextPtsVec = new VectorOfPoint2f())
-            using (var statusVec = new VectorOfByte())
-            using (var errVec = new VectorOfFloat())
-            {
+            using var nextPtsVec = new VectorOfPoint2f(nextPts);
+            using var statusVec = new VectorOfByte();
+            using var errVec = new VectorOfFloat();
+            NativeMethods.HandleException(
                 NativeMethods.video_calcOpticalFlowPyrLK_vector(
                     prevImg.CvPtr, nextImg.CvPtr, prevPts, prevPts.Length,
-                    nextPtsVec.CvPtr, statusVec.CvPtr, errVec.CvPtr, 
-                    winSize0, maxLevel, criteria0, (int)flags, minEigThreshold);
-                nextPts = nextPtsVec.ToArray();
-                status = statusVec.ToArray();
-                err = errVec.ToArray();
-            }
+                    nextPtsVec.CvPtr, statusVec.CvPtr, errVec.CvPtr,
+                    winSize0, maxLevel, criteria0, (int) flags, minEigThreshold));
+            GC.KeepAlive(prevImg);
+            GC.KeepAlive(nextImg);
+            nextPts = nextPtsVec.ToArray();
+            status = statusVec.ToArray();
+            err = errVec.ToArray();
         }
 
         /// <summary>
@@ -257,53 +269,144 @@ namespace OpenCvSharp
             int iterations, int polyN, double polySigma, OpticalFlowFlags flags)
         {
             if (prev == null)
-                throw new ArgumentNullException("nameof(prev)");
+                throw new ArgumentNullException(nameof(prev));
             if (next == null)
-                throw new ArgumentNullException("nameof(next)");
+                throw new ArgumentNullException(nameof(next));
             if (flow == null)
-                throw new ArgumentNullException("nameof(flow)");
+                throw new ArgumentNullException(nameof(flow));
             prev.ThrowIfDisposed();
             next.ThrowIfDisposed();
             flow.ThrowIfNotReady();
 
-            NativeMethods.video_calcOpticalFlowFarneback(prev.CvPtr, next.CvPtr, 
-                flow.CvPtr, pyrScale, levels, winsize, iterations, polyN, polySigma, 
-                (int)flags);
-
+            NativeMethods.HandleException(
+                NativeMethods.video_calcOpticalFlowFarneback(
+                    prev.CvPtr, next.CvPtr, flow.CvPtr, pyrScale, levels, winsize, 
+                    iterations, polyN, polySigma, (int) flags));
+            GC.KeepAlive(prev);
+            GC.KeepAlive(next);
             flow.Fix();
         }
 
         /// <summary>
-        /// Estimates the best-fit Euqcidean, similarity, affine or perspective transformation
-        /// that maps one 2D point set to another or one image to another.
+        /// Computes the Enhanced Correlation Coefficient value between two images @cite EP08 .
         /// </summary>
-        /// <param name="src">First input 2D point set stored in std::vector or Mat, or an image stored in Mat.</param>
-        /// <param name="dst">Second input 2D point set of the same size and the same type as A, or another image.</param>
-        /// <param name="fullAffine">If true, the function finds an optimal affine transformation with no additional restrictions (6 degrees of freedom). 
-        /// Otherwise, the class of transformations to choose from is limited to combinations of translation, rotation, and uniform scaling (5 degrees of freedom).</param>
+        /// <param name="templateImage">single-channel template image; CV_8U or CV_32F array.</param>
+        /// <param name="inputImage">single-channel input image to be warped to provide an image similar to templateImage, same type as templateImage.</param>
+        /// <param name="inputMask">An optional mask to indicate valid values of inputImage.</param>
         /// <returns></returns>
-        public static Mat EstimateRigidTransform(
-            InputArray src, InputArray dst, bool fullAffine)
+        public static double ComputeECC(InputArray templateImage, InputArray inputImage, InputArray? inputMask = null)
         {
-            if (src == null)
-                throw new ArgumentNullException("nameof(src)");
-            if (dst == null)
-                throw new ArgumentNullException("nameof(dst)");
-            src.ThrowIfDisposed();
-            dst.ThrowIfDisposed();
+            if (templateImage == null)
+                throw new ArgumentNullException(nameof(templateImage));
+            if (inputImage == null)
+                throw new ArgumentNullException(nameof(inputImage));
+            templateImage.ThrowIfDisposed();
+            inputImage.ThrowIfDisposed();
+            inputMask?.ThrowIfDisposed();
 
-            IntPtr result = NativeMethods.video_estimateRigidTransform(
-                src.CvPtr, dst.CvPtr, fullAffine ? 1 : 0);
-            return new Mat(result);
+            NativeMethods.HandleException(
+                NativeMethods.video_computeECC(
+                    templateImage.CvPtr, inputImage.CvPtr, inputMask?.CvPtr ?? IntPtr.Zero, out var ret));
+
+            GC.KeepAlive(templateImage);
+            GC.KeepAlive(inputImage);
+            GC.KeepAlive(inputMask);
+            return ret;
         }
-        
+
         /// <summary>
-        /// Implementation of the Zach, Pock and Bischof Dual TV-L1 Optical Flow method
+        /// Finds the geometric transform (warp) between two images in terms of the ECC criterion @cite EP08 .
         /// </summary>
+        /// <param name="templateImage">single-channel template image; CV_8U or CV_32F array.</param>
+        /// <param name="inputImage">single-channel input image which should be warped with the final warpMatrix in
+        /// order to provide an image similar to templateImage, same type as templateImage.</param>
+        /// <param name="warpMatrix">floating-point \f$2\times 3\f$ or \f$3\times 3\f$ mapping matrix (warp).</param>
+        /// <param name="motionType">parameter, specifying the type of motion</param>
+        /// <param name="criteria">parameter, specifying the termination criteria of the ECC algorithm;
+        /// criteria.epsilon defines the threshold of the increment in the correlation coefficient between two
+        /// iterations(a negative criteria.epsilon makes criteria.maxcount the only termination criterion).
+        /// Default values are shown in the declaration above.</param>
+        /// <param name="inputMask">An optional mask to indicate valid values of inputImage.</param>
+        /// <param name="gaussFiltSize">An optional value indicating size of gaussian blur filter; (DEFAULT: 5)</param>
         /// <returns></returns>
-        public static DenseOpticalFlow CreateOptFlow_DualTVL1()
+        public static double FindTransformECC(
+            InputArray templateImage,
+            InputArray inputImage,
+            InputOutputArray warpMatrix,
+            MotionTypes motionType,
+            TermCriteria criteria,
+            InputArray? inputMask = null, 
+            int gaussFiltSize = 5)
         {
-            return DenseOpticalFlow.CreateOptFlow_DualTVL1();
+            if (templateImage == null)
+                throw new ArgumentNullException(nameof(templateImage));
+            if (inputImage == null)
+                throw new ArgumentNullException(nameof(inputImage));
+            if (warpMatrix == null)
+                throw new ArgumentNullException(nameof(warpMatrix));
+            templateImage.ThrowIfDisposed();
+            inputImage.ThrowIfDisposed();
+            warpMatrix.ThrowIfDisposed();
+            inputMask?.ThrowIfDisposed();
+
+            NativeMethods.HandleException(
+                NativeMethods.video_findTransformECC1(
+                    templateImage.CvPtr, inputImage.CvPtr, warpMatrix.CvPtr, (int)motionType,
+                    criteria, inputMask?.CvPtr ?? IntPtr.Zero, gaussFiltSize,
+                    out var ret));
+
+            GC.KeepAlive(templateImage);
+            GC.KeepAlive(inputImage);
+            GC.KeepAlive(warpMatrix);
+            GC.KeepAlive(inputMask);
+            return ret;
+        }
+
+        /// <summary>
+        /// Finds the geometric transform (warp) between two images in terms of the ECC criterion @cite EP08 .
+        /// </summary>
+        /// <param name="templateImage">single-channel template image; CV_8U or CV_32F array.</param>
+        /// <param name="inputImage">single-channel input image which should be warped with the final warpMatrix in
+        /// order to provide an image similar to templateImage, same type as templateImage.</param>
+        /// <param name="warpMatrix">floating-point \f$2\times 3\f$ or \f$3\times 3\f$ mapping matrix (warp).</param>
+        /// <param name="motionType">parameter, specifying the type of motion</param>
+        /// <param name="criteria">parameter, specifying the termination criteria of the ECC algorithm;
+        /// criteria.epsilon defines the threshold of the increment in the correlation coefficient between two
+        /// iterations(a negative criteria.epsilon makes criteria.maxcount the only termination criterion).
+        /// Default values are shown in the declaration above.</param>
+        /// <param name="inputMask">An optional mask to indicate valid values of inputImage.</param>
+        /// <returns></returns>
+        public static double FindTransformECC(
+            InputArray templateImage,
+            InputArray inputImage,
+            InputOutputArray warpMatrix, 
+            MotionTypes motionType = MotionTypes.Affine,
+            TermCriteria? criteria = null,
+            InputArray? inputMask = null)
+        {
+            if (templateImage == null)
+                throw new ArgumentNullException(nameof(templateImage));
+            if (inputImage == null)
+                throw new ArgumentNullException(nameof(inputImage));
+            if (warpMatrix == null)
+                throw new ArgumentNullException(nameof(warpMatrix));
+            templateImage.ThrowIfDisposed();
+            inputImage.ThrowIfDisposed();
+            warpMatrix.ThrowIfDisposed();
+            inputMask?.ThrowIfDisposed();
+
+            var criteriaValue = criteria.GetValueOrDefault(new TermCriteria(CriteriaType.Count | CriteriaType.Eps, 50, 0.001));
+
+            NativeMethods.HandleException(
+                NativeMethods.video_findTransformECC2(
+                    templateImage.CvPtr, inputImage.CvPtr, warpMatrix.CvPtr, (int)motionType,
+                    criteriaValue, inputMask?.CvPtr ?? IntPtr.Zero, out var ret));
+
+            GC.KeepAlive(templateImage);
+            GC.KeepAlive(inputImage);
+            GC.KeepAlive(warpMatrix);
+            GC.KeepAlive(inputMask);
+            return ret;
         }
     }
 }

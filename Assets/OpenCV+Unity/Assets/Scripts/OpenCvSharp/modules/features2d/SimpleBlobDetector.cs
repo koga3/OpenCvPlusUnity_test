@@ -8,144 +8,161 @@ namespace OpenCvSharp
     /// </summary>
     public class SimpleBlobDetector : Feature2D
     {
-        private bool disposed;
-        private Ptr<SimpleBlobDetector> ptrObj;
-		
+        private Ptr? ptrObj;
+
         /// <summary>
         /// SimpleBlobDetector parameters
         /// </summary>
         public class Params
         {
-            internal WParams data;
+            internal WParams Data;
 
             /// <summary>
             /// 
             /// </summary>
             public Params()
             {
-                data = new WParams
-                    {
-                        thresholdStep = 10,
-                        minThreshold = 50,
-                        maxThreshold = 220,
-                        minRepeatability = 2,
-                        minDistBetweenBlobs = 10,
-                        filterByColor = 1,
-                        blobColor = 0,
-                        filterByArea = 1,
-                        minArea = 25,
-                        maxArea = 5000,
-                        filterByCircularity = 0,
-                        minCircularity = 0.8f,
-                        maxCircularity = Single.MaxValue,
-                        filterByInertia = 1,
-                        minInertiaRatio = 0.1f,
-                        maxInertiaRatio = Single.MaxValue,
-                        filterByConvexity = 1,
-                        minConvexity = 0.95f,
-                        maxConvexity = Single.MaxValue
-                    };
+                Data = new WParams
+                {
+                    thresholdStep = 10,
+                    minThreshold = 50,
+                    maxThreshold = 220,
+                    minRepeatability = 2,
+                    minDistBetweenBlobs = 10,
+                    filterByColor = 1,
+                    blobColor = 0,
+                    filterByArea = 1,
+                    minArea = 25,
+                    maxArea = 5000,
+                    filterByCircularity = 0,
+                    minCircularity = 0.8f,
+                    maxCircularity = float.MaxValue,
+                    filterByInertia = 1,
+                    minInertiaRatio = 0.1f,
+                    maxInertiaRatio = float.MaxValue,
+                    filterByConvexity = 1,
+                    minConvexity = 0.95f,
+                    maxConvexity = float.MaxValue
+                };
             }
 
 #pragma warning disable 1591
             public float ThresholdStep
             {
-                get { return data.thresholdStep; }
-                set { data.thresholdStep = value; }
+                get => Data.thresholdStep;
+                set => Data.thresholdStep = value;
             }
+
             public float MinThreshold
             {
-                get { return data.minThreshold; }
-                set { data.minThreshold = value; }
+                get => Data.minThreshold;
+                set => Data.minThreshold = value;
             }
+
             public float MaxThreshold
             {
-                get { return data.maxThreshold; }
-                set { data.maxThreshold = value; }
+                get => Data.maxThreshold;
+                set => Data.maxThreshold = value;
             }
+
             public uint MinRepeatability
             {
-                get { return data.minRepeatability; }
-                set { data.minRepeatability = value; }
+                get => Data.minRepeatability;
+                set => Data.minRepeatability = value;
             }
+
             public float MinDistBetweenBlobs
             {
-                get { return data.minDistBetweenBlobs; }
-                set { data.minDistBetweenBlobs = value; }
+                get => Data.minDistBetweenBlobs;
+                set => Data.minDistBetweenBlobs = value;
             }
 
             public bool FilterByColor
             {
-                get { return data.filterByColor != 0; }
-                set { data.filterByColor = (value ? 1 : 0); }
+                get => Data.filterByColor != 0;
+                set => Data.filterByColor = (value ? 1 : 0);
             }
+
             public byte BlobColor
             {
-                get { return data.blobColor; }
-                set { data.blobColor = value; }
+                get => Data.blobColor;
+                set => Data.blobColor = value;
             }
 
             public bool FilterByArea
             {
-                get { return data.filterByArea != 0; }
-                set { data.filterByArea = (value ? 1 : 0); }
+                get => Data.filterByArea != 0;
+                set => Data.filterByArea = (value ? 1 : 0);
             }
-            public float MinArea{
-                get { return data.minArea; }
-                set { data.minArea = value; }
+
+            public float MinArea
+            {
+                get => Data.minArea;
+                set => Data.minArea = value;
             }
+
             public float MaxArea
             {
-                get { return data.maxArea; }
-                set { data.maxArea = value; }
+                get => Data.maxArea;
+                set => Data.maxArea = value;
             }
 
             public bool FilterByCircularity
             {
-                get { return data.filterByCircularity != 0; }
-                set { data.filterByCircularity = (value ? 1 : 0); }
+                get => Data.filterByCircularity != 0;
+                set => Data.filterByCircularity = (value ? 1 : 0);
             }
-            public float MinCircularity{
-                get { return data.minCircularity; }
-                set { data.minCircularity = value; }
+
+            public float MinCircularity
+            {
+                get => Data.minCircularity;
+                set => Data.minCircularity = value;
             }
+
             public float MaxCircularity
             {
-                get { return data.maxCircularity; }
-                set { data.maxCircularity = value; }
+                get => Data.maxCircularity;
+                set => Data.maxCircularity = value;
             }
 
             public bool FilterByInertia
             {
-                get { return data.filterByInertia != 0; }
-                set { data.filterByInertia = (value ? 1 : 0); }
+                get => Data.filterByInertia != 0;
+                set => Data.filterByInertia = (value ? 1 : 0);
             }
-            public float MinInertiaRatio{
-                get { return data.minInertiaRatio; }
-                set { data.minInertiaRatio = value; }
+
+            public float MinInertiaRatio
+            {
+                get => Data.minInertiaRatio;
+                set => Data.minInertiaRatio = value;
             }
+
             public float MaxInertiaRatio
             {
-                get { return data.maxInertiaRatio; }
-                set { data.maxInertiaRatio = value; }
+                get => Data.maxInertiaRatio;
+                set => Data.maxInertiaRatio = value;
             }
 
             public bool FilterByConvexity
             {
-                get { return data.filterByConvexity != 0; }
-                set { data.filterByConvexity = (value ? 1 : 0); }
+                get => Data.filterByConvexity != 0;
+                set => Data.filterByConvexity = (value ? 1 : 0);
             }
-            public float MinConvexity{
-                get { return data.minConvexity; }
-                set { data.minConvexity = value; }
+
+            public float MinConvexity
+            {
+                get => Data.minConvexity;
+                set => Data.minConvexity = value;
             }
+
             public float MaxConvexity
             {
-                get { return data.maxConvexity; }
-                set { data.maxConvexity = value; }
+                get => Data.maxConvexity;
+                set => Data.maxConvexity = value;
             }
         }
 
+#pragma warning disable CA1051
         [StructLayout(LayoutKind.Sequential)]
         public struct WParams
         {
@@ -169,78 +186,62 @@ namespace OpenCvSharp
 
             public int filterByConvexity;
             public float minConvexity, maxConvexity;
+#pragma warning restore CA1051
 #pragma warning restore 1591
         }
-        
-        #region Init & Disposal
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
-        internal SimpleBlobDetector(Ptr<SimpleBlobDetector> p)
-			: base(p.Get())
+        protected SimpleBlobDetector(IntPtr p)
         {
-			ptrObj = p;
+            ptrObj = new Ptr(p);
+            ptr = ptrObj.Get();
         }
 
         /// <summary>
-        /// 
+        /// Construct a SimpleBlobDetector instance
         /// </summary>
         /// <param name="parameters"></param>
-        public static SimpleBlobDetector Create(Params parameters = null)
+        public static SimpleBlobDetector Create(Params? parameters = null)
         {
             if (parameters == null)
                 parameters = new Params();
-            IntPtr ptr = NativeMethods.features2d_SimpleBlobDetector_create(ref parameters.data);
-            return new SimpleBlobDetector(new Ptr<SimpleBlobDetector>(ptr));
+            NativeMethods.HandleException(
+                NativeMethods.features2d_SimpleBlobDetector_create(ref parameters.Data, out var ptr));
+            return new SimpleBlobDetector(ptr);
         }
-                
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
-        /// <summary>
-        /// Releases the resources
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                            ptrObj = null;
-                        }
-                    }
-                    // releases unmanaged resources
 
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+        /// <summary>
+        /// Releases managed resources
+        /// </summary>
+        protected override void DisposeManaged()
+        {
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
+        }
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.features2d_Ptr_SimpleBlobDetector_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.features2d_Ptr_SimpleBlobDetector_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
-        #endregion
-
-        #region Methods
-
-        #endregion
     }
 }

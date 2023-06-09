@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
 #if LANG_JP
@@ -27,6 +29,7 @@ namespace OpenCvSharp
         /// </summary>
 #endif
         public float Rho;
+
 #if LANG_JP
         /// <summary>
         /// 線分の角度(ラジアン)
@@ -55,12 +58,13 @@ namespace OpenCvSharp
 #endif
         public LineSegmentPolar(float rho, float theta)
         {
-            this.Rho = rho;
-            this.Theta = theta;
+            Rho = rho;
+            Theta = theta;
         }
         #endregion
 
         #region Operators
+
 #if LANG_JP
         /// <summary>
         /// 指定したオブジェクトと等しければtrueを返す 
@@ -76,8 +80,10 @@ namespace OpenCvSharp
 #endif
         public bool Equals(LineSegmentPolar obj)
         {
-            return (this.Rho == obj.Rho && this.Theta == obj.Theta);
+            return (Math.Abs(Rho - obj.Rho) < 1e-9 && 
+                    Math.Abs(Theta - obj.Theta) < 1e-9);
         }
+
 #if LANG_JP
         /// <summary>
         /// == 演算子のオーバーロード
@@ -132,7 +138,7 @@ namespace OpenCvSharp
         /// <param name="obj">The Object to test.</param>
         /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
 #endif
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return base.Equals(obj);
         }
@@ -164,7 +170,7 @@ namespace OpenCvSharp
 #endif
         public override string ToString()
         {
-            return string.Format("CvLineSegmentPolar (Rho:{0} Theta:{1})", Rho, Theta);
+            return $"CvLineSegmentPolar (Rho:{Rho} Theta:{Theta})";
         }
         #endregion
 
@@ -190,6 +196,7 @@ namespace OpenCvSharp
             var seg2 = line2.ToSegmentPoint(5000);
             return LineSegmentPoint.LineIntersection(seg1, seg2);
         }
+
 #if LANG_JP
         /// <summary>
         /// 2直線の交点を求める (線分としてではなく直線として)
@@ -208,34 +215,52 @@ namespace OpenCvSharp
             return LineIntersection(this, line);
         }
 
+#if LANG_JP
         /// <summary>
-        /// CvLineSegmentPointに変換する
+        /// LineSegmentPointに変換する
         /// </summary>
         /// <param name="scale"></param>
         /// <returns></returns>
+#else
+        /// <summary>
+        /// Convert To LineSegmentPoint
+        /// </summary>
+        /// <param name="scale"></param>
+        /// <returns></returns>
+#endif
         public LineSegmentPoint ToSegmentPoint(double scale)
         {
-            double cos = Math.Cos(Theta);
-            double sin = Math.Sin(Theta);
-            double x0 = cos * Rho;
-            double y0 = sin * Rho;
+            var cos = Math.Cos(Theta);
+            var sin = Math.Sin(Theta);
+            var x0 = cos * Rho;
+            var y0 = sin * Rho;
             var p1 = new Point { X = (int)Math.Round(x0 + scale * -sin), Y = (int)Math.Round(y0 + scale * cos) };
             var p2 = new Point { X = (int)Math.Round(x0 - scale * -sin), Y = (int)Math.Round(y0 - scale * cos) };
             return new LineSegmentPoint(p1, p2);
         }
+
+#if LANG_JP
         /// <summary>
         /// 指定したx座標を両端とするような線分に変換する
         /// </summary>
         /// <param name="x1"></param>
         /// <param name="x2"></param>
         /// <returns></returns>
+#else
+        /// <summary>
+        /// Converts to a line segment with the specified x coordinates at both ends
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="x2"></param>
+        /// <returns></returns>
+#endif
         public LineSegmentPoint ToSegmentPointX(int x1, int x2)
         {
             if (x1 > x2)
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentException($"{nameof(x1)} > {nameof(x2)}");
 
-            int? y1 = YPosOfLine(x1);
-            int? y2 = YPosOfLine(x2);
+            var y1 = YPosOfLine(x1);
+            var y2 = YPosOfLine(x2);
             if (!y1.HasValue || !y2.HasValue)
                 throw new Exception();
 
@@ -243,19 +268,29 @@ namespace OpenCvSharp
             var p2 = new Point(x2, y2.Value);
             return new LineSegmentPoint(p1, p2);
         }
+
+#if LANG_JP
         /// <summary>
         /// 指定したy座標を両端とするような線分に変換する
         /// </summary>
         /// <param name="y1"></param>
         /// <param name="y2"></param>
         /// <returns></returns>
+#else
+        /// <summary>
+        /// Converts to a line segment with the specified y coordinates at both ends
+        /// </summary>
+        /// <param name="y1"></param>
+        /// <param name="y2"></param>
+        /// <returns></returns>
+#endif
         public LineSegmentPoint ToSegmentPointY(int y1, int y2)
         {
             if (y1 > y2)
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentException($"{nameof(y1)} > {nameof(y2)}");
 
-            int? x1 = XPosOfLine(y1);
-            int? x2 = XPosOfLine(y2);
+            var x1 = XPosOfLine(y1);
+            var x2 = XPosOfLine(y2);
             if (!x1.HasValue || !x2.HasValue)
                 throw new Exception();
 
@@ -264,34 +299,45 @@ namespace OpenCvSharp
             return new LineSegmentPoint(p1, p2);
         }
 
+#if LANG_JP
         /// <summary>
         /// 指定したy座標を通るときのx座標を求める
         /// </summary>
         /// <param name="y"></param>
         /// <returns></returns>
+#else
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="y"></param>
+        /// <returns></returns>
+#endif
         public int? XPosOfLine(int y)
         {
             var axis = new LineSegmentPolar(y, (float)(Math.PI / 2));     // 垂線90度 = x軸に平行       
-            Point? node = LineIntersection(axis);
-            if (node.HasValue)
-                return node.Value.X;
-            else
-                return null;
+            var node = LineIntersection(axis);
+            return node?.X;
         }
+
+#if LANG_JP
         /// <summary>
         /// 指定したx座標を通るときのy座標を求める
         /// </summary>
         /// <param name="x"></param>
         /// <returns></returns>
+#else
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
+#endif
         public int? YPosOfLine(int x)
         {
-            var axis = new LineSegmentPolar(x, (float)0);     // 垂線0度 = y軸に平行       
-            Point? node = LineIntersection(axis);
-            if (node.HasValue)
-                return node.Value.Y;
-            else
-                return null;
+            var axis = new LineSegmentPolar(x, 0);     // 垂線0度 = y軸に平行       
+            var node = LineIntersection(axis);
+            return node?.Y;
         }
-        #endregion
+#endregion
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace OpenCvSharp
 {
@@ -44,12 +42,12 @@ namespace OpenCvSharp
         /// <summary>
         /// Parent matrix object
         /// </summary>
-        protected readonly Mat parent;
+        protected Mat Parent { get; }
 
         /// <summary>
         /// Step byte length for each dimension
         /// </summary>
-        protected readonly long[] steps;
+        protected IReadOnlyList<long> Steps { get; }
 
         /// <summary>
         /// Constructor
@@ -57,14 +55,15 @@ namespace OpenCvSharp
         /// <param name="parent"></param>
         internal MatIndexer(Mat parent)
         {
-            this.parent = parent;
+            Parent = parent;
 
-            int dims = parent.Dims();
-            steps = new long[dims];
-            for (int i = 0; i < dims; i++)
+            var dims = parent.Dims;
+            var steps = new long[dims];
+            for (var i = 0; i < dims; i++)
             {
-                steps[i] = (long)parent.Step(i);
+                steps[i] = parent.Step(i);
             }
+            Steps = steps;
         }
     }
 }

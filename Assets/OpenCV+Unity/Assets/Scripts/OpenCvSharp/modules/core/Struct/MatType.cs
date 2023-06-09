@@ -8,12 +8,17 @@ namespace OpenCvSharp
     /// <summary>
     /// Matrix data type (depth and number of channels)
     /// </summary>
-    public struct MatType : IEquatable<MatType>, IEquatable<int>
+    public readonly struct MatType : IEquatable<MatType>, IEquatable<int>
     {
         /// <summary>
         /// Entity value
         /// </summary>
-        public int Value;
+        private readonly int value;
+
+        /// <summary>
+        /// Entity value
+        /// </summary>
+        public int Value => value;
 
         /// <summary>
         /// 
@@ -21,21 +26,27 @@ namespace OpenCvSharp
         /// <param name="value"></param>
         public MatType(int value)
         {
-            Value = value;
+            this.value = value;
         }
 
-        /// <summary>
-        /// 
+        /// <summary> 
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
         public static implicit operator int(MatType self)
         {
-            return self.Value;
+            return self.value;
         }
 
-        /// <summary>
-        /// 
+        /// <summary> 
+        /// </summary>
+        /// <returns></returns>
+        public int ToInt32()
+        {
+            return value;
+        }
+
+        /// <summary> 
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -44,43 +55,43 @@ namespace OpenCvSharp
             return new MatType(value);
         }
 
-        /// <summary>
-        /// 
+        /// <summary> 
         /// </summary>
-        public int Depth
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static MatType FromInt32(int value)
         {
-            get { return Value & (CV_DEPTH_MAX - 1); }
+            return new MatType(value);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public bool IsInteger
-        {
-            get { return Depth < CV_32F; }
-        }
+        public int Depth => value & (CV_DEPTH_MAX - 1);
 
         /// <summary>
         /// 
         /// </summary>
-        public int Channels
-        {
-            get { return (Value >> CV_CN_SHIFT) + 1; }
-        }
+        public bool IsInteger => Depth < CV_32F;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Channels => (Value >> CV_CN_SHIFT) + 1;
 
         public bool Equals(MatType other)
         {
-            return Value == other.Value;
+            return value == other.value;
         }
 
         public bool Equals(int other)
         {
-            return Value == other;
+            return value == other;
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
-            if (other == null)
+            if (other is null)
                 return false;
             if (other.GetType() != typeof (MatType))
                 return false;
@@ -109,13 +120,10 @@ namespace OpenCvSharp
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return value.GetHashCode();
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
+        
+        /// <inheritdoc />
         public override string ToString()
         {
             string s;
@@ -146,10 +154,10 @@ namespace OpenCvSharp
                     s = "CV_USRTYPE1";
                     break;
                 default:
-                    throw new OpenCvSharpException("Unsupported CvType value: " + Value);
+                    return $"Unsupported type value ({Value})";
             }
 
-            int ch = Channels;
+            var ch = Channels;
             if (ch <= 4)
                 return s + "C" + ch;
             else

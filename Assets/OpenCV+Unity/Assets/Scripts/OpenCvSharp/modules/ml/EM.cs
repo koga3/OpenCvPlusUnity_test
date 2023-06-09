@@ -1,5 +1,4 @@
 ﻿using System;
-using OpenCvSharp.ML;
 
 // ReSharper disable once InconsistentNaming
 
@@ -16,19 +15,15 @@ namespace OpenCvSharp
 #endif
     public class EM : Algorithm
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed;
-        private Ptr<EM> ptrObj;
+        private Ptr? ptrObj;
 
         #region Constants
 
 #pragma warning disable 1591
-// ReSharper disable InconsistentNaming
+        // ReSharper disable InconsistentNaming
         public const int DEFAULT_NCLUSTERS = 5;
         public const int DEFAULT_MAX_ITERS = 100;
-// ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
 #pragma warning restore 1591
 
         #endregion
@@ -36,11 +31,11 @@ namespace OpenCvSharp
         #region Init and Disposal
 
         /// <summary>
-        /// Creates instance by raw pointer cv::ml::EM*
+        /// Creates instance by pointer cv::Ptr&lt;EM&gt;
         /// </summary>
         protected EM(IntPtr p)
         {
-            ptrObj = new Ptr<EM>(p);
+            ptrObj = new Ptr(p);
             ptr = ptrObj.Get();
         }
 
@@ -49,50 +44,48 @@ namespace OpenCvSharp
         /// </summary>
         /// <returns></returns>
         public static EM Create()
-	    {
-            IntPtr ptr = NativeMethods.ml_SVM_create();
-            return new EM(ptr);
-	    }
-
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {
-                        if (ptrObj != null)
-                        {
-                            ptrObj.Dispose();
-                            ptrObj = null;
-                        }
-                    }
-                    ptr = IntPtr.Zero;
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_create(out var ret));
+            return new EM(ret);
+        }
+
+        /// <summary>
+        /// Loads and creates a serialized model from a file.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static EM Load(string filePath)
+        {
+            if (filePath == null)
+                throw new ArgumentNullException(nameof(filePath));
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_load(filePath, out var ret));
+            return new EM(ret);
+        }
+
+        /// <summary>
+        /// Loads algorithm from a String.
+        /// </summary>
+        /// <param name="strModel">he string variable containing the model you want to load.</param>
+        /// <returns></returns>
+        public static EM LoadFromString(string strModel)
+        {
+            if (strModel == null)
+                throw new ArgumentNullException(nameof(strModel));
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_loadFromString(strModel, out var ret));
+            return new EM(ret);
+        }
+
+        /// <summary>
+        /// Releases managed resources
+        /// </summary>
+        protected override void DisposeManaged()
+        {
+            ptrObj?.Dispose();
+            ptrObj = null;
+            base.DisposeManaged();
         }
 
         #endregion
@@ -107,8 +100,19 @@ namespace OpenCvSharp
         /// </summary>
         public int ClustersNumber
         {
-            get { return NativeMethods.ml_EM_getClustersNumber(ptr); }
-            set { NativeMethods.ml_EM_setClustersNumber(ptr, value); }
+            get
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_getClustersNumber(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+            set
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_setClustersNumber(ptr, value));
+                GC.KeepAlive(this);
+            }
         }
 
         /// <summary>
@@ -116,8 +120,19 @@ namespace OpenCvSharp
         /// </summary>
         public int CovarianceMatrixType
         {
-            get { return NativeMethods.ml_EM_getCovarianceMatrixType(ptr); }
-            set { NativeMethods.ml_EM_setCovarianceMatrixType(ptr, value); }
+            get
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_getCovarianceMatrixType(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+            set
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_setCovarianceMatrixType(ptr, value));
+                GC.KeepAlive(this);
+            }
         }
 
         /// <summary>
@@ -129,8 +144,19 @@ namespace OpenCvSharp
         /// </summary>
         public TermCriteria TermCriteria
         {
-            get { return NativeMethods.ml_EM_getTermCriteria(ptr); }
-            set { NativeMethods.ml_EM_setTermCriteria(ptr, value); }
+            get
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_getTermCriteria(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+            set
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_EM_setTermCriteria(ptr, value));
+                GC.KeepAlive(this);
+            }
         }
 
         #endregion
@@ -144,10 +170,11 @@ namespace OpenCvSharp
         /// <returns></returns>
         public Mat GetWeights()
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
-            IntPtr p = NativeMethods.ml_EM_getWeights(ptr);
-            return new Mat(p);
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_getWeights(ptr, out var ret));
+            GC.KeepAlive(this);
+            return new Mat(ret);
         }
 
         /// <summary>
@@ -158,10 +185,11 @@ namespace OpenCvSharp
         /// <returns></returns>
         public Mat GetMeans()
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
-            IntPtr p = NativeMethods.ml_EM_getMeans(ptr);
-            return new Mat(p);
+            ThrowIfDisposed();
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_getMeans(ptr, out var ret));
+            GC.KeepAlive(this);
+            return new Mat(ret);
         }
 
         /// <summary>
@@ -171,182 +199,212 @@ namespace OpenCvSharp
         /// </summary>
         public Mat[] GetCovs()
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            ThrowIfDisposed();
 
-            using (var vec = new VectorOfMat())
-            {
-                NativeMethods.ml_EM_getCovs(ptr, vec.CvPtr);
-                return vec.ToArray();
-            }
-            
+            using var vec = new VectorOfMat();
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_getCovs(ptr, vec.CvPtr));
+            GC.KeepAlive(this);
+            return vec.ToArray();
         }
 
-#if LANG_JP
-    /// <summary>
-    /// サンプル集合からガウス混合パラメータを推定する
-    /// </summary>
-    /// <param name="samples"></param>
-    /// <param name="means0"></param>
-    /// <param name="covs0"></param>
-    /// <param name="weights0"></param>
-    /// <param name="logLikelihoods"></param>
-    /// <param name="labels"></param>
-    /// <param name="probs"></param>
-#else
         /// <summary>
-        /// Estimates Gaussian mixture parameters from the sample set
+        /// Estimate the Gaussian mixture parameters from a samples set.
         /// </summary>
-        /// <param name="samples"></param>
-        /// <param name="means0"></param>
-        /// <param name="covs0"></param>
-        /// <param name="weights0"></param>
-        /// <param name="logLikelihoods"></param>
-        /// <param name="labels"></param>
-        /// <param name="probs"></param>
-#endif
+        /// <param name="samples">Samples from which the Gaussian mixture model will be estimated. It should be a
+        /// one-channel matrix, each row of which is a sample. If the matrix does not have CV_64F type
+        /// it will be converted to the inner matrix of such type for the further computing.</param>
+        /// <param name="logLikelihoods">The optional output matrix that contains a likelihood logarithm value for
+        /// each sample. It has \f$nsamples \times 1\f$ size and CV_64FC1 type.</param>
+        /// <param name="labels">The optional output "class label" for each sample:
+        /// \f$\texttt{labels}_i=\texttt{arg max}_k(p_{i,k}), i=1..N\f$ (indices of the most probable
+        /// mixture component for each sample). It has \f$nsamples \times 1\f$ size and CV_32SC1 type.</param>
+        /// <param name="probs">The optional output matrix that contains posterior probabilities of each Gaussian
+        /// mixture component given the each sample. It has \f$nsamples \times nclusters\f$ size and CV_64FC1 type.</param>
+        /// <returns></returns>
+        // ReSharper disable once InconsistentNaming
+        public virtual bool TrainEM(
+            InputArray samples,
+            OutputArray? logLikelihoods = null,
+            OutputArray? labels = null,
+            OutputArray? probs = null)
+        {
+            ThrowIfDisposed();
+            if (samples == null)
+                throw new ArgumentNullException(nameof(samples));
+            samples.ThrowIfDisposed();
+
+            logLikelihoods?.ThrowIfNotReady();
+            labels?.ThrowIfNotReady();
+            probs?.ThrowIfNotReady();
+
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_trainEM(
+                    ptr,
+                    samples.CvPtr,
+                    Cv2.ToPtr(logLikelihoods),
+                    Cv2.ToPtr(labels),
+                    Cv2.ToPtr(probs),
+                    out var ret));
+
+            logLikelihoods?.Fix();
+            labels?.Fix();
+            probs?.Fix();
+            GC.KeepAlive(this);
+            GC.KeepAlive(samples);
+            GC.KeepAlive(logLikelihoods);
+            GC.KeepAlive(labels);
+            GC.KeepAlive(probs);
+            return ret != 0;
+        }
+
+        /// <summary>
+        /// Estimate the Gaussian mixture parameters from a samples set.
+        /// </summary>
+        /// <param name="samples">Samples from which the Gaussian mixture model will be estimated. It should be a
+        /// one-channel matrix, each row of which is a sample. If the matrix does not have CV_64F type
+        /// it will be converted to the inner matrix of such type for the further computing.</param>
+        /// <param name="means0">Initial means \f$a_k\f$ of mixture components. It is a one-channel matrix of
+        /// \f$nclusters \times dims\f$ size. If the matrix does not have CV_64F type it will be
+        /// converted to the inner matrix of such type for the further computing.</param>
+        /// <param name="covs0">The vector of initial covariance matrices \f$S_k\f$ of mixture components. Each of
+        /// covariance matrices is a one-channel matrix of \f$dims \times dims\f$ size. If the matrices
+        /// do not have CV_64F type they will be converted to the inner matrices of such type for the further computing.</param>
+        /// <param name="weights0">Initial weights \f$\pi_k\f$ of mixture components. It should be a one-channel
+        /// floating-point matrix with \f$1 \times nclusters\f$ or \f$nclusters \times 1\f$ size.</param>
+        /// <param name="logLikelihoods">The optional output matrix that contains a likelihood logarithm value for
+        /// each sample. It has \f$nsamples \times 1\f$ size and CV_64FC1 type.</param>
+        /// <param name="labels">The optional output "class label" for each sample:
+        /// \f$\texttt{labels}_i=\texttt{arg max}_k(p_{i,k}), i=1..N\f$ (indices of the most probable
+        /// mixture component for each sample). It has \f$nsamples \times 1\f$ size and CV_32SC1 type.</param>
+        /// <param name="probs">The optional output matrix that contains posterior probabilities of each Gaussian
+        /// mixture component given the each sample. It has \f$nsamples \times nclusters\f$ size and CV_64FC1 type.</param>
         public virtual bool TrainE(
             InputArray samples,
             InputArray means0,
-            InputArray covs0 = null,
-            InputArray weights0 = null,
-            OutputArray logLikelihoods = null,
-            OutputArray labels = null,
-            OutputArray probs = null)
+            InputArray? covs0 = null,
+            InputArray? weights0 = null,
+            OutputArray? logLikelihoods = null,
+            OutputArray? labels = null,
+            OutputArray? probs = null)
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            ThrowIfDisposed();
             if (samples == null)
-                throw new ArgumentNullException("nameof(samples)");
+                throw new ArgumentNullException(nameof(samples));
             if (means0 == null)
-                throw new ArgumentNullException("nameof(means0)");
+                throw new ArgumentNullException(nameof(means0));
             samples.ThrowIfDisposed();
             means0.ThrowIfDisposed();
 
-            if (logLikelihoods != null)
-                logLikelihoods.ThrowIfNotReady();
-            if (covs0 != null)
-                covs0.ThrowIfDisposed();
-            if (weights0 != null)
-                weights0.ThrowIfDisposed();
-            if (labels != null)
-                labels.ThrowIfNotReady();
-            if (probs != null)
-                probs.ThrowIfNotReady();
+            logLikelihoods?.ThrowIfNotReady();
+            covs0?.ThrowIfDisposed();
+            weights0?.ThrowIfDisposed();
+            labels?.ThrowIfNotReady();
+            probs?.ThrowIfNotReady();
 
-            int ret = NativeMethods.ml_EM_trainE(
-                ptr,
-                samples.CvPtr,
-                means0.CvPtr,
-                Cv2.ToPtr(covs0),
-                Cv2.ToPtr(weights0),
-                Cv2.ToPtr(logLikelihoods),
-                Cv2.ToPtr(labels),
-                Cv2.ToPtr(probs));
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_trainE(
+                    ptr,
+                    samples.CvPtr,
+                    means0.CvPtr,
+                    Cv2.ToPtr(covs0),
+                    Cv2.ToPtr(weights0),
+                    Cv2.ToPtr(logLikelihoods),
+                    Cv2.ToPtr(labels),
+                    Cv2.ToPtr(probs),
+                    out var ret));
 
-            if (logLikelihoods != null)
-                logLikelihoods.Fix();
-            if (labels != null)
-                labels.Fix();
-            if (probs != null)
-                probs.Fix();
+            logLikelihoods?.Fix();
+            labels?.Fix();
+            probs?.Fix();
+            GC.KeepAlive(this);
             GC.KeepAlive(samples);
             GC.KeepAlive(means0);
             GC.KeepAlive(covs0);
             GC.KeepAlive(weights0);
-
+            GC.KeepAlive(logLikelihoods);
+            GC.KeepAlive(labels);
+            GC.KeepAlive(probs);
             return ret != 0;
         }
 
-#if LANG_JP
-    /// <summary>
-    /// サンプル集合からガウス混合パラメータを推定する
-    /// </summary>
-    /// <param name="samples"></param>
-    /// <param name="probs0"></param>
-    /// <param name="logLikelihoods"></param>
-    /// <param name="labels"></param>
-    /// <param name="probs"></param>
-#else
         /// <summary>
-        /// Estimates Gaussian mixture parameters from the sample set
+        /// Estimate the Gaussian mixture parameters from a samples set.
         /// </summary>
-        /// <param name="samples"></param>
-        /// <param name="probs0"></param>
-        /// <param name="logLikelihoods"></param>
-        /// <param name="labels"></param>
-        /// <param name="probs"></param>
-#endif
+        /// <param name="samples">Samples from which the Gaussian mixture model will be estimated. It should be a
+        /// one-channel matrix, each row of which is a sample. If the matrix does not have CV_64F type
+        /// it will be converted to the inner matrix of such type for the further computing.</param>
+        /// <param name="probs0">the probabilities</param>
+        /// <param name="logLikelihoods">The optional output matrix that contains a likelihood logarithm value for
+        /// each sample. It has \f$nsamples \times 1\f$ size and CV_64FC1 type.</param>
+        /// <param name="labels">The optional output "class label" for each sample:
+        /// \f$\texttt{labels}_i=\texttt{arg max}_k(p_{i,k}), i=1..N\f$ (indices of the most probable
+        /// mixture component for each sample). It has \f$nsamples \times 1\f$ size and CV_32SC1 type.</param>
+        /// <param name="probs">The optional output matrix that contains posterior probabilities of each Gaussian
+        /// mixture component given the each sample. It has \f$nsamples \times nclusters\f$ size and CV_64FC1 type.</param>
         public virtual bool TrainM(
             InputArray samples,
             InputArray probs0,
-            OutputArray logLikelihoods = null,
-            OutputArray labels = null,
-            OutputArray probs = null)
+            OutputArray? logLikelihoods = null,
+            OutputArray? labels = null,
+            OutputArray? probs = null)
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            ThrowIfDisposed();
             if (samples == null)
-                throw new ArgumentNullException("nameof(samples)");
+                throw new ArgumentNullException(nameof(samples));
             if (probs0 == null)
-                throw new ArgumentNullException("nameof(probs0)");
+                throw new ArgumentNullException(nameof(probs0));
             samples.ThrowIfDisposed();
             probs0.ThrowIfDisposed();
 
-            if (logLikelihoods != null)
-                logLikelihoods.ThrowIfNotReady();
-            if (labels != null)
-                labels.ThrowIfNotReady();
-            if (probs != null)
-                probs.ThrowIfNotReady();
+            logLikelihoods?.ThrowIfNotReady();
+            labels?.ThrowIfNotReady();
+            probs?.ThrowIfNotReady();
 
-            int ret = NativeMethods.ml_EM_trainM(
-                ptr,
-                samples.CvPtr,
-                probs0.CvPtr,
-                Cv2.ToPtr(logLikelihoods),
-                Cv2.ToPtr(labels),
-                Cv2.ToPtr(probs));
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_trainM(
+                    ptr,
+                    samples.CvPtr,
+                    probs0.CvPtr,
+                    Cv2.ToPtr(logLikelihoods),
+                    Cv2.ToPtr(labels),
+                    Cv2.ToPtr(probs), 
+                    out var ret));
 
-            if (logLikelihoods != null)
-                logLikelihoods.Fix();
-            if (labels != null)
-                labels.Fix();
-            if (probs != null)
-                probs.Fix();
+            logLikelihoods?.Fix();
+            labels?.Fix();
+            probs?.Fix();
+            GC.KeepAlive(this);
             GC.KeepAlive(samples);
             GC.KeepAlive(probs0);
+            GC.KeepAlive(logLikelihoods);
+            GC.KeepAlive(labels);
+            GC.KeepAlive(probs);
 
             return ret != 0;
         }
 
-#if LANG_JP
-    /// <summary>
-    /// サンプルに対する応答を予測する
-    /// </summary>
-    /// <param name="sample"></param>
-    /// <param name="probs"></param>
-#else
         /// <summary>
         /// Predicts the response for sample
         /// </summary>
-        /// <param name="sample"></param>
-        /// <param name="probs"></param>
-#endif
-        public virtual Vec2d Predict2(InputArray sample, OutputArray probs = null)
+        /// <param name="sample">A sample for classification. It should be a one-channel matrix of
+        /// \f$1 \times dims\f$ or \f$dims \times 1\f$ size.</param>
+        /// <param name="probs">Optional output matrix that contains posterior probabilities of each component
+        /// given the sample. It has \f$1 \times nclusters\f$ size and CV_64FC1 type.</param>
+        public virtual Vec2d Predict2(InputArray sample, OutputArray? probs = null)
         {
-            if (disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            ThrowIfDisposed();
             if (sample == null)
-                throw new ArgumentNullException("nameof(sample)");
+                throw new ArgumentNullException(nameof(sample));
             sample.ThrowIfDisposed();
-            if (probs != null)
-                probs.ThrowIfNotReady();
+            probs?.ThrowIfNotReady();
 
-            Vec2d ret = NativeMethods.ml_EM_predict2(ptr, sample.CvPtr, Cv2.ToPtr(probs));
-            if (probs != null)
-                probs.Fix();
+            NativeMethods.HandleException(
+                NativeMethods.ml_EM_predict2(ptr, sample.CvPtr, Cv2.ToPtr(probs), out var ret));
+            probs?.Fix();
+            GC.KeepAlive(this);
             GC.KeepAlive(sample);
+            GC.KeepAlive(probs);
             return ret;
         }
 
@@ -392,21 +450,21 @@ namespace OpenCvSharp
 
 #if LANG_JP
     /// <summary>
-	/// アルゴリズムをスタートする最初のステップ
-	/// </summary>
+    /// アルゴリズムをスタートする最初のステップ
+    /// </summary>
 #else
         /// <summary>
         /// The initial step the algorithm starts from
         /// </summary>
 #endif
-        public enum StartStep : int
+        public enum StartStep
         {
 #if LANG_JP
-		/// <summary>
-		/// アルゴリズムはE-stepでスタートする. 少なくとも平均ベクトルの初期値 CvEMParams.Means が渡されなければならない． 
-		/// オプションとして，ユーザは重み（CvEMParams.Weights）と/または共変動行列（CvEMParams.Covs）を与えることもできる．
-		/// [CvEM::START_E_STEP]
-		/// </summary>
+        /// <summary>
+        /// アルゴリズムはE-stepでスタートする. 少なくとも平均ベクトルの初期値 CvEMParams.Means が渡されなければならない． 
+        /// オプションとして，ユーザは重み（CvEMParams.Weights）と/または共変動行列（CvEMParams.Covs）を与えることもできる．
+        /// [CvEM::START_E_STEP]
+        /// </summary>
 #else
             /// <summary>
             /// The algorithm starts with E-step. 
@@ -418,10 +476,10 @@ namespace OpenCvSharp
 #endif
             E = 1,
 #if LANG_JP
-		/// <summary>
-		/// アルゴリズムはM-stepでスタートする.初期確率 p_i,k が与えられなければならない．
-		/// [CvEM::START_M_STEP]
-		/// </summary>
+        /// <summary>
+        /// アルゴリズムはM-stepでスタートする.初期確率 p_i,k が与えられなければならない．
+        /// [CvEM::START_M_STEP]
+        /// </summary>
 #else
             /// <summary>
             /// The algorithm starts with M-step. The initial probabilities p_i,k must be provided.
@@ -430,10 +488,10 @@ namespace OpenCvSharp
 #endif
             M = 2,
 #if LANG_JP
-		/// <summary>
-		/// ユーザから必要な値が指定されない場合，k-meansアルゴリズムが混合分布パラメータの初期値推定に用いられる．
-		/// [CvEM::START_AUTO_STEP]
-		/// </summary>
+        /// <summary>
+        /// ユーザから必要な値が指定されない場合，k-meansアルゴリズムが混合分布パラメータの初期値推定に用いられる．
+        /// [CvEM::START_AUTO_STEP]
+        /// </summary>
 #else
             /// <summary>
             /// No values are required from the user, k-means algorithm is used to estimate initial mixtures parameters. 
@@ -444,5 +502,27 @@ namespace OpenCvSharp
         }
 
         #endregion
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_Ptr_EM_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.ml_Ptr_EM_delete(ptr));
+                base.DisposeUnmanaged();
+            }
+        }
     }
 }

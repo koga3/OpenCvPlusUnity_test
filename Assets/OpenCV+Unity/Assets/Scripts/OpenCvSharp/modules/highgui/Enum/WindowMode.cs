@@ -1,18 +1,19 @@
 ﻿using System;
+// ReSharper disable InconsistentNaming
 
 namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// cvNamedWindowで使用するウィンドウのフラグ
-	/// </summary>
+    /// cvNamedWindowで使用するウィンドウのフラグ
+    /// </summary>
 #else
     /// <summary>
     /// Flags for the window
     /// </summary>
 #endif
     [Flags]
-    public enum WindowMode : int
+    public enum WindowMode
     {
         /// <summary>
         /// the user can resize the window (no constraint) / 
@@ -21,9 +22,9 @@ namespace OpenCvSharp
         Normal = 0x00000000,
 
 #if LANG_JP
-		/// <summary>
-		/// 表示される画像サイズに合わせてウィンドウサイズが自動的に調整される 
-		/// </summary>
+        /// <summary>
+        /// 表示される画像サイズに合わせてウィンドウサイズが自動的に調整される 
+        /// </summary>
 #else
         /// <summary>
         /// the user cannot resize the window, the size is constrainted by the image displayed

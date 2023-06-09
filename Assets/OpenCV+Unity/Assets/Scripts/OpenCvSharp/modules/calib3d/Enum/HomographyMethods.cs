@@ -4,15 +4,15 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// ホモグラフィ行列を計算するための手法
-	/// </summary>
+    /// ホモグラフィ行列を計算するための手法
+    /// </summary>
 #else
     /// <summary>
     /// The method used to computed homography matrix
     /// </summary>
 #endif
     [Flags]
-    public enum HomographyMethods : int
+    public enum HomographyMethods
     {
 #if LANG_JP
         /// <summary>

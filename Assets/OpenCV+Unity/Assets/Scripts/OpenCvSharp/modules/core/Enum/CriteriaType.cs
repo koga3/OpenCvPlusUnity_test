@@ -4,15 +4,15 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// 終了条件の種類
-	/// </summary>
+    /// 終了条件の種類
+    /// </summary>
 #else
     /// <summary>
     /// Type of termination criteria 
     /// </summary>
 #endif
     [Flags]
-    public enum CriteriaType : int
+    public enum CriteriaType
     {
 #if LANG_JP
     /// <summary>

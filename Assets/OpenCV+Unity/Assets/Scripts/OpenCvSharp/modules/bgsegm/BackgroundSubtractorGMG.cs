@@ -6,85 +6,45 @@ namespace OpenCvSharp
 
     /// <summary>
     /// Background Subtractor module. Takes a series of images and returns a sequence of mask (8UC1)
-    ///  images of the same size, where 255 indicates Foreground and 0 represents Background.
+    /// images of the same size, where 255 indicates Foreground and 0 represents Background.
     /// </summary>
     public class BackgroundSubtractorGMG : BackgroundSubtractor
     {
         /// <summary>
         /// cv::Ptr&lt;T&gt;
         /// </summary>
-        private Ptr<BackgroundSubtractorGMG> objectPtr;
-        /// <summary>
-        /// 
-        /// </summary>
-        private bool disposed;
-
-        #region Init & Disposal
+        private Ptr? objectPtr;
 
         /// <summary>
-        /// 
+        /// Creates a GMG Background Subtractor
         /// </summary>
-        /// <param name="initializationFrames"></param>
-        /// <param name="decisionThreshold"></param>
+        /// <param name="initializationFrames">number of frames used to initialize the background models.</param>
+        /// <param name="decisionThreshold">Threshold value, above which it is marked foreground, else background.</param>
         /// <returns></returns>
         public static BackgroundSubtractorGMG Create(
             int initializationFrames = 120, double decisionThreshold = 0.8)
         {
-            IntPtr ptr = NativeMethods.bgsegm_createBackgroundSubtractorGMG(
-                initializationFrames, decisionThreshold);
+            NativeMethods.HandleException(
+                NativeMethods.bgsegm_createBackgroundSubtractorGMG(
+                    initializationFrames, decisionThreshold, out var ptr));
             return new BackgroundSubtractorGMG(ptr);
         }
 
         internal BackgroundSubtractorGMG(IntPtr ptr)
         {
-            this.objectPtr = new Ptr<BackgroundSubtractorGMG>(ptr);
+            objectPtr = new Ptr(ptr);
             this.ptr = objectPtr.Get(); 
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {
-                    }
-                    if (IsEnabledDispose)
-                    {
-                        if (objectPtr != null)
-                        {
-                            objectPtr.Dispose();
-                        }
-                        objectPtr = null;
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            objectPtr?.Dispose();
+            objectPtr = null;
+            base.DisposeManaged();
         }
-        #endregion
 
         #region Properties
 
@@ -95,15 +55,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getMaxFeatures(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getMaxFeatures(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setMaxFeatures(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setMaxFeatures(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -114,15 +77,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getDefaultLearningRate(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getDefaultLearningRate(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setDefaultLearningRate(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setDefaultLearningRate(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -133,15 +99,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getNumFrames(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getNumFrames(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setNumFrames(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setNumFrames(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -152,15 +121,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getQuantizationLevels(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getQuantizationLevels(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setQuantizationLevels(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setQuantizationLevels(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -171,15 +143,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getBackgroundPrior(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getBackgroundPrior(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setBackgroundPrior(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setBackgroundPrior(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -190,15 +165,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getSmoothingRadius(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getSmoothingRadius(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setSmoothingRadius(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setSmoothingRadius(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -209,15 +187,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getDecisionThreshold(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getDecisionThreshold(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setDecisionThreshold(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setDecisionThreshold(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -228,15 +209,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getUpdateBackgroundModel(ptr) != 0;
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getUpdateBackgroundModel(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret != 0;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setUpdateBackgroundModel(ptr, value ? 1 : 0);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setUpdateBackgroundModel(ptr, value ? 1 : 0));
+                GC.KeepAlive(this);
             }
         }
 
@@ -247,15 +231,18 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getMinVal(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getMinVal(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setMinVal(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setMinVal(ptr, value));
+                GC.KeepAlive(this);
             }
         }
 
@@ -266,19 +253,43 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.bgsegm_BackgroundSubtractorGMG_getMaxVal(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_getMaxVal(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
             set
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                NativeMethods.bgsegm_BackgroundSubtractorGMG_setMaxVal(ptr, value);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_BackgroundSubtractorGMG_setMaxVal(ptr, value));
+                GC.KeepAlive(this);
             }
         }
-        
+
         #endregion
 
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
+            {
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_Ptr_BackgroundSubtractorGMG_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.bgsegm_Ptr_BackgroundSubtractorGMG_delete(ptr));
+                base.DisposeUnmanaged();
+            }
+        }
     }
 }

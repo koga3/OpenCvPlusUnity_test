@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using OpenCvSharp.Util;
 
 namespace OpenCvSharp
 {
@@ -10,13 +11,11 @@ namespace OpenCvSharp
     /// </summary>
     public sealed class LineIterator : DisposableCvObject, IEnumerable<LineIterator.Pixel>
     {
-        private bool disposed;
-
-        private Mat img;
-        private Point pt1;
-        private Point pt2;
-        private PixelConnectivity connectivity;
-        private bool leftToRight;
+        private readonly Mat img;
+        private readonly Point pt1;
+        private readonly Point pt2;
+        private readonly PixelConnectivity connectivity;
+        private readonly bool leftToRight;
 
         /// <summary>
         /// Constructor
@@ -34,9 +33,7 @@ namespace OpenCvSharp
             PixelConnectivity connectivity = PixelConnectivity.Connectivity8,
             bool leftToRight = false)
         {
-            if (img == null)
-                throw new ArgumentNullException("nameof(img)");
-            this.img = img;
+            this.img = img ?? throw new ArgumentNullException(nameof(img));
             this.pt1 = pt1;
             this.pt2 = pt2;
             this.connectivity = connectivity;
@@ -44,7 +41,7 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// Intializes the iterator
+        /// Initializes the iterator
         /// </summary>
         /// <returns></returns>
         private void Initialize()
@@ -53,52 +50,19 @@ namespace OpenCvSharp
                 throw new OpenCvSharpException("invalid state");
             img.ThrowIfDisposed();
 
-            ptr = NativeMethods.imgproc_LineIterator_new(
-                img.CvPtr, pt1, pt2, (int)connectivity, leftToRight ? 1 : 0);
-            disposed = false;
+            NativeMethods.HandleException(
+                NativeMethods.imgproc_LineIterator_new(
+                    img.CvPtr, pt1, pt2, (int)connectivity, leftToRight ? 1 : 0, out ptr));
         }
 
-#if LANG_JP
-    /// <summary>
-    /// リソースの解放
-    /// </summary>
-    /// <param name="disposing">
-    /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-    /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-    ///</param>
-#else
         /// <summary>
-        /// Releases the resources
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeUnmanaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                    }
-                    // releases unmanaged resources
-                    if (IsEnabledDispose)
-                    {
-                        if (ptr != IntPtr.Zero)
-                            NativeMethods.imgproc_LineIterator_delete(ptr);
-                        ptr = IntPtr.Zero;
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.HandleException(
+                NativeMethods.imgproc_LineIterator_delete(ptr));
+            base.DisposeUnmanaged();
         }
 
         /// <summary>
@@ -107,19 +71,17 @@ namespace OpenCvSharp
         /// <returns></returns>
         public IEnumerator<Pixel> GetEnumerator()
         {
-            //if (disposed)
-            //    throw new ObjectDisposedException(GetType().Name);
             Dispose();
             Initialize();
 
-            int count = NativeMethods.imgproc_LineIterator_count_get(ptr);
-            for (int i = 0; i < count; i++)
+            NativeMethods.HandleException(
+                NativeMethods.imgproc_LineIterator_count_get(ptr, out var count));
+            for (var i = 0; i < count; i++)
             {
-                Point pos = NativeMethods.imgproc_LineIterator_pos(ptr);
-                IntPtr value = NativeMethods.imgproc_LineIterator_operatorEntity(ptr);
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_getValuePosAndShiftToNext(ptr, out var value, out var pos));
                 yield return new Pixel(pos, value);
-
-                NativeMethods.imgproc_LineIterator_operatorPP(ptr);
+                GC.KeepAlive(this);
             }
         }
 
@@ -133,14 +95,16 @@ namespace OpenCvSharp
         /// <summary>
         /// 
         /// </summary>
-        public IntPtr Ptr 
+        public IntPtr Ptr
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_ptr_get(ptr);
-            } 
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_ptr_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
         }
 
         /// <summary>
@@ -150,9 +114,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_ptr0_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_ptr0_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -163,9 +129,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_step_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_step_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -176,9 +144,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_elemSize_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_elemSize_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -189,9 +159,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_err_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_err_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -202,9 +174,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_count_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_count_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -215,9 +189,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_minusDelta_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_minusDelta_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -228,9 +204,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_plusDelta_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_plusDelta_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -241,9 +219,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_minusStep_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_minusStep_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -254,9 +234,11 @@ namespace OpenCvSharp
         {
             get
             {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().Name);
-                return NativeMethods.imgproc_LineIterator_plusStep_get(ptr);
+                ThrowIfDisposed();
+                NativeMethods.HandleException(
+                    NativeMethods.imgproc_LineIterator_plusStep_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
             }
         }
 
@@ -270,26 +252,26 @@ namespace OpenCvSharp
             /// <summary>
             /// 
             /// </summary>
-            public unsafe byte* ValuePointer { get; private set; }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public Point Pos { get; private set; }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public IntPtr Value
+            public unsafe byte* ValuePointer
             {
                 get
                 {
                     unsafe
                     {
-                        return new IntPtr(ValuePointer);
+                        return (byte*)Value.ToPointer();
                     }
                 }
             }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public Point Pos { get; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public IntPtr Value { get; }
 
             /// <summary>
             /// 
@@ -298,7 +280,7 @@ namespace OpenCvSharp
             /// <returns></returns>
             public T GetValue<T>() where T : struct
             {
-                return (T)Marshal.PtrToStructure(Value, typeof (T));
+                return Marshal.PtrToStructure<T>(Value);
             }
 
             /// <summary>
@@ -320,7 +302,7 @@ namespace OpenCvSharp
             internal unsafe Pixel(Point pos, IntPtr value)
             {
                 Pos = pos;
-                ValuePointer = (byte*)value.ToPointer();
+                Value = value;
             }
         }
     }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
 #if LANG_JP
@@ -27,6 +29,7 @@ namespace OpenCvSharp
         /// </summary>
 #endif
         public Point2f Center;
+
 #if LANG_JP
         /// <summary>
         /// 半径
@@ -55,8 +58,8 @@ namespace OpenCvSharp
 #endif
         public CircleSegment(Point2f center, float radius)
         {
-            this.Center = center;
-            this.Radius = radius;
+            Center = center;
+            Radius = radius;
         }
         #endregion
 
@@ -76,7 +79,8 @@ namespace OpenCvSharp
 #endif
         public bool Equals(CircleSegment obj)
         {
-            return (this.Center == obj.Center && this.Radius == obj.Radius);
+            return (Center == obj.Center && 
+                    Math.Abs(Radius - obj.Radius) < 1e-9);
         }
 #if LANG_JP
         /// <summary>
@@ -119,6 +123,7 @@ namespace OpenCvSharp
         #endregion
 
         #region Overrided Methods
+
 #if LANG_JP
         /// <summary>
         /// Equalsのオーバーライド
@@ -132,10 +137,11 @@ namespace OpenCvSharp
         /// <param name="obj">The Object to test.</param>
         /// <returns>This method returns true if obj is the same type as this object and has the same members as this object.</returns>
 #endif    
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return base.Equals(obj);
         }
+
 #if LANG_JP
         /// <summary>
         /// GetHashCodeのオーバーライド
@@ -151,6 +157,7 @@ namespace OpenCvSharp
         {
             return Center.GetHashCode() + Radius.GetHashCode();
         }
+
 #if LANG_JP
         /// <summary>
         /// 文字列形式を返す 
@@ -164,8 +171,9 @@ namespace OpenCvSharp
 #endif
         public override string ToString()
         {
-            return string.Format("CvCircleSegment (Center:{0} Radius:{1})", Center, Radius);
+            return $"CvCircleSegment (Center:{Center} Radius:{Radius})";
         }
+
         #endregion
     }
 }

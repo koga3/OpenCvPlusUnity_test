@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace OpenCvSharp
 {
-
     /// <inheritdoc />
     /// <summary>
     /// C++ std::string
@@ -16,6 +16,16 @@ namespace OpenCvSharp
         public StdString()
         {
             ptr = NativeMethods.string_new1();
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// </summary>
+        public StdString(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+                throw new ArgumentException("null pointer", nameof(ptr));
+            this.ptr = ptr;
         }
 
         /// <inheritdoc />
@@ -43,11 +53,11 @@ namespace OpenCvSharp
         /// <summary>
         /// string.size()
         /// </summary>
-        public uint Size
+        public int Size
         {
             get
             {
-                var ret = NativeMethods.string_size(ptr);
+                var ret = NativeMethods.string_size(ptr).ToInt32(); 
                 GC.KeepAlive(this);
                 return ret;
             }
@@ -62,9 +72,7 @@ namespace OpenCvSharp
             unsafe
             {
                 var stringPointer = NativeMethods.string_c_str(ptr);
-                var ret = Encoding.UTF8.GetString((byte*)stringPointer, (int)Size);
-                GC.KeepAlive(this);
-                return ret;
+                return Encoding.UTF8.GetString((byte*) stringPointer, Size);
             }
         }
     }

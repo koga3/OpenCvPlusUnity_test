@@ -3,20 +3,15 @@ namespace OpenCvSharp
 {
 #if LANG_JP
     /// <summary>
-	/// 線分の種類
-	/// </summary>
+    /// 線分の種類
+    /// </summary>
 #else
     /// <summary>
     /// Type of the line
     /// </summary>
 #endif
-    public enum LineTypes : int
+    public enum LineTypes
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        Filled = -1,
-
         /// <summary>
         /// 8-connected line.
         /// </summary>
@@ -28,7 +23,7 @@ namespace OpenCvSharp
         Link4 = 4,
 
         /// <summary>
-        /// Antialiased line. 
+        /// Anti-aliased line. 
         /// </summary>
         AntiAlias = 16
     }

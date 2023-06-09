@@ -1,33 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace OpenCvSharp.XFeatures2D
 {
     // ReSharper disable InconsistentNaming
 
-#if LANG_JP
-    /// <summary>
-    /// SIFT 実装.
-    /// </summary>
-#else
     /// <summary>
     /// SIFT implementation.
     /// </summary>
-#endif
     public class SIFT : Feature2D
     {
-        private bool disposed;
-        private Ptr<SIFT> detectorPtr;
-
-        #region Init & Disposal
+        private Ptr? detectorPtr;
 
         /// <summary>
-        /// Creates instance by raw pointer cv::SURF*
+        /// Creates instance by raw pointer cv::SIFT*
         /// </summary>
-        internal SIFT(Ptr<SIFT> p)
-            : base(p.Get())
+        protected SIFT(IntPtr p)
         {
-			detectorPtr = p;
+            detectorPtr = new Ptr(p);
+            ptr = detectorPtr.Get();
         }
 
         /// <summary>
@@ -47,60 +37,43 @@ namespace OpenCvSharp.XFeatures2D
             double contrastThreshold = 0.04, double edgeThreshold = 10,
             double sigma = 1.6)
         {
-            IntPtr ptr = NativeMethods.xfeatures2d_SIFT_create(
-                nFeatures, nOctaveLayers, 
-                contrastThreshold, edgeThreshold, sigma);
-            return new SIFT(new Ptr<SIFT>(ptr));
+            NativeMethods.HandleException(
+                NativeMethods.xfeatures2d_SIFT_create(
+                    nFeatures, nOctaveLayers,
+                    contrastThreshold, edgeThreshold, sigma, out var ptr));
+            return new SIFT(ptr);
         }
 
-#if LANG_JP
         /// <summary>
-        /// リソースの解放
+        /// Releases managed resources
         /// </summary>
-        /// <param name="disposing">
-        /// trueの場合は、このメソッドがユーザコードから直接が呼ばれたことを示す。マネージ・アンマネージ双方のリソースが解放される。
-        /// falseの場合は、このメソッドはランタイムからファイナライザによって呼ばれ、もうほかのオブジェクトから参照されていないことを示す。アンマネージリソースのみ解放される。
-        ///</param>
-#else
-        /// <summary>
-        /// Releases the resources
-        /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-#endif
-        protected override void Dispose(bool disposing)
+        protected override void DisposeManaged()
         {
-            if (!disposed)
+            detectorPtr?.Dispose();
+            detectorPtr = null;
+            base.DisposeManaged();
+        }
+
+        internal class Ptr : OpenCvSharp.Ptr
+        {
+            public Ptr(IntPtr ptr) : base(ptr)
             {
-                try
-                {
-                    // releases managed resources
-                    if (disposing)
-                    {
-                        if (detectorPtr != null)
-                        {
-                            detectorPtr.Dispose();
-                            detectorPtr = null;
-                        }
-                    }
-                    // releases unmanaged resources
-                    
-                    ptr = IntPtr.Zero;
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
+            }
+
+            public override IntPtr Get()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_SIFT_get(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret;
+            }
+
+            protected override void DisposeUnmanaged()
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.xfeatures2d_Ptr_SIFT_delete(ptr));
+                base.DisposeUnmanaged();
             }
         }
-
-        #endregion
-
-        #region Properties
-
-        #endregion
     }
 }

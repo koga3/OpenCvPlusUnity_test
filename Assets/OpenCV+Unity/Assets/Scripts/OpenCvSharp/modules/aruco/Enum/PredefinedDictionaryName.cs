@@ -1,9 +1,10 @@
-﻿namespace OpenCvSharp.Aruco
+﻿// ReSharper disable InconsistentNaming
+namespace OpenCvSharp.Aruco
 {
     /// <summary>
     /// PredefinedDictionaryName
     /// </summary>
-    public enum PredefinedDictionaryName : int
+    public enum PredefinedDictionaryName
     { 
 #pragma warning disable 1591
         Dict4X4_50 = 0,
@@ -22,6 +23,10 @@
         Dict7X7_100,
         Dict7X7_250,
         Dict7X7_1000,
-        DictArucoOriginal
+        DictArucoOriginal,
+        DictAprilTag_16h5,
+        DictAprilTag_25h9,
+        DictAprilTag_36h10,
+        DictAprilTag_36h11
     }
 }

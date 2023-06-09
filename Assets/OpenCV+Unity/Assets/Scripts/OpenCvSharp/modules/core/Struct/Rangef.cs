@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1051
+
 namespace OpenCvSharp
 {
     /// <summary>
@@ -8,20 +10,20 @@ namespace OpenCvSharp
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public struct Rangef
+    public readonly struct Rangef
     {
         /// <summary>
         /// 
         /// </summary>
-        public float Start;
+        public readonly float Start;
 
         /// <summary>
         /// 
         /// </summary>
-        public float End;
+        public readonly float End;
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="start"></param>
         /// <param name="end"></param>
@@ -32,7 +34,7 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// 
+        /// Implicit operator (Range)this
         /// </summary>
         /// <param name="range"></param>
         /// <returns></returns>
@@ -42,11 +44,8 @@ namespace OpenCvSharp
         }
 
         /// <summary>
-        /// 
+        /// Range(int.MinValue, int.MaxValue)
         /// </summary>
-        public static Range All
-        {
-            get { return new Range(Int32.MinValue, Int32.MaxValue); }
-        }
+        public static Range All => new Range(int.MinValue, int.MaxValue);
     }
 }

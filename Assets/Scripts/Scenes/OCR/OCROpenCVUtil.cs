@@ -704,7 +704,7 @@ namespace Kew
                         var former = OpenCvSharp.Unity.TextureToMat(formerTex);
                         {
                             Cv2.CvtColor(former, former, ColorConversionCodes.BGRA2GRAY);
-                            Debug.Log($"dim: {former.Dims()}, channels: {former.Channels()}, size: {former.Size()}");
+                            // Debug.Log($"dim: {former.Dims()}, channels: {former.Channels()}, size: {former.Size()}");
                             saving = await CreateSaveData(image, label, PlayerPrefs.GetInt("ocr_data_count_no" + label, 0), token, former);
                             PlayerPrefs.SetInt("ocr_data_count_no" + label, PlayerPrefs.GetInt("ocr_data_count_no" + label, 0) + 1);
                         }

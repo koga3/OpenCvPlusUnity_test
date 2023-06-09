@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using OpenCvSharp.Util;
 
@@ -8,15 +9,9 @@ namespace OpenCvSharp
     /// <summary>
     /// 
     /// </summary>
-    internal class VectorOfVec3f : DisposableCvObject, IStdVector<Vec3f>
+    // ReSharper disable once InconsistentNaming
+    public class VectorOfVec3f : DisposableCvObject, IStdVector<Vec3f>
     {
-        /// <summary>
-        /// Track whether Dispose has been called
-        /// </summary>
-        private bool disposed = false;
-
-        #region Init and Dispose
-
         /// <summary>
         /// 
         /// </summary>
@@ -32,7 +27,7 @@ namespace OpenCvSharp
         public VectorOfVec3f(int size)
         {
             if (size < 0)
-                throw new ArgumentOutOfRangeException("nameof(size)");
+                throw new ArgumentOutOfRangeException(nameof(size));
             ptr = NativeMethods.vector_Vec3f_new2(new IntPtr(size));
         }
 
@@ -43,47 +38,31 @@ namespace OpenCvSharp
         public VectorOfVec3f(IEnumerable<Vec3f> data)
         {
             if (data == null)
-                throw new ArgumentNullException("nameof(data)");
-            Vec3f[] array = EnumerableEx.ToArray(data);
+                throw new ArgumentNullException(nameof(data));
+            var array = data.ToArray();
             ptr = NativeMethods.vector_Vec3f_new3(array, new IntPtr(array.Length));
         }
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// Releases unmanaged resources
         /// </summary>
-        /// <param name="disposing">
-        /// If disposing equals true, the method has been called directly or indirectly by a user's code. Managed and unmanaged resources can be disposed.
-        /// If false, the method has been called by the runtime from inside the finalizer and you should not reference other objects. Only unmanaged resources can be disposed.
-        /// </param>
-        protected override void Dispose(bool disposing)
+        protected override void DisposeUnmanaged()
         {
-            if (!disposed)
-            {
-                try
-                {
-                    if (IsEnabledDispose)
-                    {
-                        NativeMethods.vector_Vec2f_delete(ptr);
-                    }
-                    disposed = true;
-                }
-                finally
-                {
-                    base.Dispose(disposing);
-                }
-            }
+            NativeMethods.vector_Vec3f_delete(ptr);
+            base.DisposeUnmanaged();
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// vector.size()
         /// </summary>
         public int Size
         {
-            get { return NativeMethods.vector_Vec3f_getSize(ptr).ToInt32(); }
+            get
+            {
+                var res = NativeMethods.vector_Vec3f_getSize(ptr).ToInt32();
+                GC.KeepAlive(this);
+                return res;
+            }
         }
 
         /// <summary>
@@ -91,12 +70,13 @@ namespace OpenCvSharp
         /// </summary>
         public IntPtr ElemPtr
         {
-            get { return NativeMethods.vector_Vec3f_getPointer(ptr); }
+            get
+            {
+                var res = NativeMethods.vector_Vec3f_getPointer(ptr);
+                GC.KeepAlive(this);
+                return res;
+            }
         }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Converts std::vector to managed array
@@ -112,27 +92,25 @@ namespace OpenCvSharp
         /// </summary>
         /// <typeparam name="T">structure that has two float members (ex. CvLineSegmentPolar, CvPoint2D32f, PointF)</typeparam>
         /// <returns></returns>
-        public T[] ToArray<T>() where T : struct
+        public T[] ToArray<T>() where T : unmanaged
         {
-            int typeSize = Marshal.SizeOf(typeof (T));
+            var typeSize = Marshal.SizeOf<T>();
             if (typeSize != sizeof (float)*3)
-            {
-                throw new OpenCvSharpException();
-            }
+                throw new OpenCvSharpException($"Unsupported type '{typeof(T)}'");
 
-            int arySize = Size;
+            var arySize = Size;
             if (arySize == 0)
             {
-                return new T[0];
+                return Array.Empty<T>();
             }
-            T[] dst = new T[arySize];
-            using (ArrayAddress1<T> dstPtr = new ArrayAddress1<T>(dst))
+            var dst = new T[arySize];
+            using (var dstPtr = new ArrayAddress1<T>(dst))
             {
-                Util.Utility.CopyMemory(dstPtr, ElemPtr, typeSize*dst.Length);
+                MemoryHelper.CopyMemory(dstPtr.Pointer, ElemPtr, typeSize*dst.Length);
             }
+            GC.KeepAlive(this); // ElemPtr is IntPtr to memory held by this object, so
+                                // make sure we are not disposed until finished with copy.
             return dst;
         }
-
-        #endregion
     }
 }

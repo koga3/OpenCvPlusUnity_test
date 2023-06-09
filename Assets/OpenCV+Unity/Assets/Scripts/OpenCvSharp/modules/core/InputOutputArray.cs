@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
-using OpenCvSharp;
-
+﻿
 namespace OpenCvSharp
 {
     /// <summary>
-    /// Proxy datatype for passing Mat's and vector&lt;&gt;'s as input parameters.
+    /// Proxy data type for passing Mat's and vector&lt;&gt;'s as input parameters.
     /// Synonym for OutputArray.
     /// </summary>
     public class InputOutputArray : OutputArray
@@ -21,7 +16,16 @@ namespace OpenCvSharp
         {
         }
 
-        #region Cast
+        /// <summary>
+        /// Creates a proxy class of the specified Mat
+        /// </summary>
+        /// <param name="mat"></param>
+        /// <returns></returns>
+        public static new InputOutputArray Create(Mat mat)
+        {
+            return new InputOutputArray(mat);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -31,6 +35,5 @@ namespace OpenCvSharp
         {
             return new InputOutputArray(mat);
         }
-        #endregion
     }
 }

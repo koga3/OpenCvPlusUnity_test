@@ -1,23 +1,22 @@
-﻿
-namespace OpenCvSharp
+﻿namespace OpenCvSharp
 {
     // TODO support createButton
 
 #if LANG_JP
     /// <summary>
-	/// cv::createButton で用いるボタンの種類
-	/// </summary>
+    /// cv::createButton で用いるボタンの種類
+    /// </summary>
 #else
     /// <summary>
     /// Button type flags (cv::createButton)
     /// </summary>
 #endif
-    public enum ButtonTypes : int
+    public enum ButtonTypes
     {
 #if LANG_JP
-		/// <summary>
-		/// 通常のプッシュボタン．
-		/// </summary>
+        /// <summary>
+        /// 通常のプッシュボタン．
+        /// </summary>
 #else
         /// <summary>
         /// The button will be a push button.
@@ -26,9 +25,9 @@ namespace OpenCvSharp
         PushButton = 0,
 
 #if LANG_JP
-		/// <summary>
-		/// チェックボックスボタン
-		/// </summary>
+        /// <summary>
+        /// チェックボックスボタン
+        /// </summary>
 #else
         /// <summary>
         /// The button will be a checkbox button.
@@ -37,11 +36,11 @@ namespace OpenCvSharp
         Checkbox = 1,
 
 #if LANG_JP
-		/// <summary>
-		/// ラジオボックスボタン．
-		/// 同じボタンバー（同じライン上）にあるラジオボックスは，排他的です．
-		/// つまり，同時に1つしか選択できません．
-		/// </summary>
+        /// <summary>
+        /// ラジオボックスボタン．
+        /// 同じボタンバー（同じライン上）にあるラジオボックスは，排他的です．
+        /// つまり，同時に1つしか選択できません．
+        /// </summary>
 #else
         /// <summary>
         /// The button will be a radiobox button. The radiobox on the same buttonbar (same line) are exclusive; one on can be select at the time.

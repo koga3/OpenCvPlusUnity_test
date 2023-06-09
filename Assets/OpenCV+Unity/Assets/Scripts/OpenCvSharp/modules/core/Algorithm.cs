@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 
 namespace OpenCvSharp
 {
@@ -17,9 +16,12 @@ namespace OpenCvSharp
             if (ptr == IntPtr.Zero)
                 throw new ObjectDisposedException(GetType().Name);
             if (fs == null)
-                throw new ArgumentNullException("nameof(fs)");
+                throw new ArgumentNullException(nameof(fs));
 
-            NativeMethods.core_Algorithm_write(ptr, fs.CvPtr);
+            NativeMethods.HandleException(
+                NativeMethods.core_Algorithm_write(ptr, fs.CvPtr));
+            GC.KeepAlive(this);
+            GC.KeepAlive(fs);
         }
 
         /// <summary>
@@ -31,9 +33,12 @@ namespace OpenCvSharp
             if (ptr == IntPtr.Zero)
                 throw new ObjectDisposedException(GetType().Name);
             if (fn == null)
-                throw new ArgumentNullException("nameof(fn)");
+                throw new ArgumentNullException(nameof(fn));
 
-            NativeMethods.core_Algorithm_read(ptr, fn.CvPtr);
+            NativeMethods.HandleException(
+                NativeMethods.core_Algorithm_read(ptr, fn.CvPtr));
+            GC.KeepAlive(this);
+            GC.KeepAlive(fn);
         }
 
         /// <summary>
@@ -47,7 +52,10 @@ namespace OpenCvSharp
                 if (ptr == IntPtr.Zero)
                     throw new ObjectDisposedException(GetType().Name);
 
-                return NativeMethods.core_Algorithm_empty(ptr) != 0;
+                NativeMethods.HandleException(
+                    NativeMethods.core_Algorithm_empty(ptr, out var ret));
+                GC.KeepAlive(this);
+                return ret != 0;
             }
         }
 
@@ -56,15 +64,17 @@ namespace OpenCvSharp
         /// In order to make this method work, the derived class must 
         /// implement Algorithm::write(FileStorage fs).
         /// </summary>
-        /// <param name="filename"></param>
-        public virtual void Save(string filename)
+        /// <param name="fileName"></param>
+        public virtual void Save(string fileName)
         {
             if (ptr == IntPtr.Zero)
                 throw new ObjectDisposedException(GetType().Name);
-            if (filename == null)
-                throw new ArgumentNullException("nameof(filename)");
+            if (fileName == null)
+                throw new ArgumentNullException(nameof(fileName));
 
-            NativeMethods.core_Algorithm_save(ptr, filename);
+            NativeMethods.HandleException(
+                NativeMethods.core_Algorithm_save(ptr, fileName));
+            GC.KeepAlive(this);
         }
 
         /// <summary>
@@ -73,13 +83,15 @@ namespace OpenCvSharp
         /// is saved to a file or string.
         /// </summary>
         /// <returns></returns>
-        public virtual String GetDefaultName()
+        public virtual string GetDefaultName()
         {
             if (ptr == IntPtr.Zero)
                 throw new ObjectDisposedException(GetType().Name);
 
-            var buf = new StringBuilder(1024);
-            NativeMethods.core_Algorithm_getDefaultName(ptr, buf, buf.Capacity);
+            using var buf = new StdString();
+            NativeMethods.HandleException(
+                NativeMethods.core_Algorithm_getDefaultName(ptr, buf.CvPtr));
+            GC.KeepAlive(this);
             return buf.ToString();
         }
     }
