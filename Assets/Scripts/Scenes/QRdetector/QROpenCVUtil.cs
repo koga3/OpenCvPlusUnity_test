@@ -101,10 +101,10 @@ namespace Kew
                 // おまけでQRコードのバージョンも計算
                 // Debug.Log("QR code version: " + ((straight_qrcode.Rows - 21) / 4) + 1);
             }
-            // else
-            // {
-            //     // Debug.Log("QR code not detected");
-            // }
+            else
+            {
+                Debug.Log("QR code not detected");
+            }
 
             return data;
         }
