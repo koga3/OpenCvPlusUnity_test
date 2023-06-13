@@ -34,8 +34,8 @@ namespace Kew
             //     new OpenCvSharp.Rect(125, 245, 50, 50)
             // };            
             {
-                new OpenCvSharp.Rect(135, 65, 50, 50),
-                new OpenCvSharp.Rect(135, 252, 50, 50)
+                new OpenCvSharp.Rect(135, 65, 40, 40),
+                new OpenCvSharp.Rect(135, 252, 40, 40)
             };
 
         // 出力する数字画像の大きさ
@@ -77,6 +77,7 @@ namespace Kew
             this.numberData = LoadData();
         }
 
+        private Mat test = new Mat();
         // 歩数確認画面かどうか判定して画面のMatを返す(歩数確認画面ではなければnull)
         public async UniTask<Mat> GetWalkCountDisplay(Mat src, CancellationToken token)
         {
@@ -153,15 +154,16 @@ namespace Kew
                         i++;
 
                         // test
-                        // Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
-                        // Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
-                        // Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
-                        // Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
+                        Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
+                        Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
+                        Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
+                        Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
                     }
                 }
             }, cancellationToken: token);
 
-            // if (test.Width > 0) DisplayMat(test, 0, 500);
+            if (test.Width > 0) DisplayMat(test, 1, 500);
+            // if (this.test.Width > 0) DisplayMat(this.test, 0, 500);
             // if (m.Width > 0) DisplayMat(m, 0);
             return retval;
         }
@@ -207,7 +209,7 @@ namespace Kew
             // Cv2.Laplacian(temp, temp, MatType.CV_32FC2);
             Cv2.Laplacian(temp, temp, MatType.CV_8UC1, 3);
 
-            DisplayMat(temp, 1);
+            DisplayMat(temp, 2);
 
             Threshold4(src);
             // DisplayMat(src, 2);
@@ -462,13 +464,21 @@ namespace Kew
             Cv2.CvtColor(image, image, ColorConversionCodes.BGRA2GRAY);
             // DisplayMat(image, 0);
             Cv2.MedianBlur(image, image, 7);
-            DisplayMat(image, 2);
+            // DisplayMat(image, 2);
             Cv2.AdaptiveThreshold(image, image, 255.0, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 23, 0.7);
             return image;
         }
         public IEnumerable<Mat> Threshold2(List<Mat> images)
         {
             return images.Select(x => Threshold2(x));
+        }
+
+        // pt0-> pt1およびpt0-> pt2からの
+        // ベクトル間の角度の余弦(コサイン)を算出
+        float Angle(Point2f pt1, Point2f pt2, Point2f pt0)
+        {
+            var vec01 = pt1 - pt0; var vec02 = pt2 - pt0;
+            return (float)(Point2f.DotProduct(vec01, vec02) / (vec01.Length() * vec02.Length()));
         }
 
         // 画像から矩形の部分を検出、トリミング
@@ -478,15 +488,43 @@ namespace Kew
             {
                 //test
                 working.CopyTo(tempMat[0]);
+                this.test = image.Clone();
                 // DisplayMat(working, 0);
 
                 Point[][] contourPoints;
                 HierarchyIndex[] i;
-                Cv2.FindContours(working, out contourPoints, out i, RetrievalModes.Tree, ContourApproximationModes.ApproxSimple);
+                Cv2.FindContours(working, out contourPoints, out i, RetrievalModes.External, ContourApproximationModes.ApproxSimple);
                 contourPoints = contourPoints.Where(points =>
                 {
-                    points = Cv2.ApproxPolyDP(points, 30.0, true);
-                    return (points.Count() == 4 && Cv2.ContourArea(points) > minRectSize);
+                    var arclen = Cv2.ArcLength(points, true);
+                    var approx = Cv2.ApproxPolyDP(points, arclen * 0.02, true);
+
+                    //四角形の輪郭は、近似後に4つの頂点があります。
+                    //比較的広い領域が凸状になります。
+
+                    //凸性の確認 
+                    var area = Math.Abs(Cv2.ContourArea(approx));
+                    if (approx.Count() == 4 && area > minRectSize && Cv2.IsContourConvex(approx))
+                    {
+                        float maxCosine = 0;
+
+                        for (int j = 2; j < 5; j++)
+                        {
+                            // 辺間の角度の最大コサインを算出
+                            var cosine = Math.Abs(Angle(approx[j % 4], approx[j - 2], approx[j - 1]));
+                            maxCosine = maxCosine < cosine ? cosine : maxCosine;
+                        }
+
+                        // すべての角度の余弦定理が小さい場合
+                        //（すべての角度は約90度です）次に、quandrangeを書き込みます
+                        // 結果のシーケンスへの頂点
+                        if (maxCosine < 0.15)
+                        {
+                            // 四角判定!!
+                            return true;
+                        }
+                    }
+                    return false;
                 }).ToArray();
 
 
@@ -503,7 +541,12 @@ namespace Kew
                             {
                                 continue;
                             }
-                            // Debug.Log($"{rect.Size}, {rect.Size.Height / rect.Size.Width}");
+
+                            // Point2f[] vertices = new Point2f[4];
+                            // vertices = rect.Points();
+                            // for (int j = 0; j < 4; j++)
+                            //     Cv2.Line(test, vertices[j], vertices[(j + 1) % 4], new Scalar(0, 255, 0), 2);
+                            // // Debug.Log($"{w.Size}, {rect.Size.Height / rect.Size.Width}");
                             float angle = rect.Angle;
                             // Debug.Log("Angle: " + rect.Angle);
                             // テスト用タブレットでやったら、角度がずれていた
