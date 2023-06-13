@@ -874,12 +874,12 @@ namespace Kew
                 return null;
             }
 
-            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.00175)
+            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.0018)
             {
                 preventResult.Clear();
                 return result;
             }
-            else if (preventResult.Count() >= 2 && preventResult.Count(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) >= 2 && result.Max(x => x.Item3) < 0.0019)
+            else if (preventResult.Count() >= 2 && preventResult.Count(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) >= 2)//&& result.Max(x => x.Item3) < 0.0019)
             {
                 preventResult.Clear();
                 return result;
