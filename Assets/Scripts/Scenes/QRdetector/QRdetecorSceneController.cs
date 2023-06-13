@@ -175,6 +175,20 @@ namespace Kew
             //         walkCnt.text = recognized.Select(x => x.ToString()).Aggregate((x, y) => x + y);
             //     }
             // });
+
+            result.Skip(1).TakeUntilDestroy(this).Subscribe(async result =>
+            {
+                if (!string.IsNullOrEmpty(result.Item1))
+                {
+                    await UniTask.SwitchToMainThread();
+                    Debug.Log("result: " + result);
+                    walkCntPopup.SetActive(true);
+                    walkCnt.text = result.Item1;
+                    isShuttered.Value = true;
+                    util.DisplayMat(result.Item2, 0);
+                }
+            });
+
             walkCntCloseBtn.AddCallbackWithTarget(() =>
             {
                 isShuttered.Value = false;
@@ -204,6 +218,7 @@ namespace Kew
             // }
         }
 
+        ReactiveProperty<Tuple<string, Mat>> result = new ReactiveProperty<Tuple<string, Mat>>();
         private int ditectedCnt = 0;
         private async UniTaskVoid SetMatsRutine(CancellationToken token)
         {
@@ -229,21 +244,29 @@ namespace Kew
                 {
                     using (Mat copy = new Mat())
                     {
-                        webCamMat.CopyTo(copy);
-                        // await using (UniTask.ReturnToMainThread(token))
+                        // webCamMat.CopyTo(copy);
+                        await using (UniTask.ReturnToMainThread(token))
                         {
-                            // await UniTask.SwitchToThreadPool();
+                            await UniTask.SwitchToThreadPool();
                             // 画像から歩数確認画面を抜き出す
                             List<Mat> list = new List<Mat>();
-                            var result = util.DetectQrCode(webCamMat);
-                            if (!string.IsNullOrEmpty(result))
-                            {
-                                isShuttered.Value = true;
-                                Debug.Log("result: " + result);
-                                walkCntPopup.SetActive(true);
-                                walkCnt.text = result;
-                            }
+                            QRCodeDetector detector = new QRCodeDetector();
+                            Point2f[] points;
+                            detector.SetEpsX(0.1);
+                            detector.SetEpsY(0.1);
+                            // Debug.Log("test result : " + detector.DetectAndDecode(webCamMat, out points, copy));
+                            Debug.Log("test result : " + detector.Detect(webCamMat, out points));
+                            if (!detector.Detect(webCamMat, out points)) continue;
+                            // Cv2.CvtColor(webCamMat, webCamMat, ColorConversionCodes.BGRA2GRAY);
+                            // Debug.Log(webCamMat.Channels().ToString() + " " + webCamMat.Type().ToString());
+                            Debug.Log("test result : " + detector.Decode(webCamMat, points, copy));
+                            // Debug.Log("test result : " + decodedInfo[0]);
+                            // result.Value = util.DetectQrCodeForTest(webCamMat);
+
+                            util.Trimming(webCamMat, webCamMat, points);
                         }
+                        if (copy.Width > 0) util.DisplayMat(copy, 3);
+                        util.DisplayMat(webCamMat, 0);
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // ReSharper disable InconsistentNaming
 
@@ -16,9 +17,9 @@ namespace OpenCvSharp
         public QRCodeDetector()
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_QRCodeDetector_new(out ptr));               
+                NativeMethods.objdetect_QRCodeDetector_new(out ptr));
         }
-        
+
         /// <summary>
         /// Releases unmanaged resources
         /// </summary>
@@ -85,7 +86,7 @@ namespace OpenCvSharp
         /// <param name="points">Quadrangle vertices found by detect() method (or some other algorithm).</param>
         /// <param name="straightQrCode">The optional output image containing rectified and binarized QR code</param>
         /// <returns></returns>
-        public string Decode(InputArray img, IEnumerable<Point2f> points, OutputArray? straightQrCode = null)
+        public string Decode(InputArray img, IEnumerable<Point2f> points, OutputArray straightQrCode = null)
         {
             if (img == null)
                 throw new ArgumentNullException(nameof(img));
@@ -115,7 +116,7 @@ namespace OpenCvSharp
         /// <param name="points">optional output array of vertices of the found QR code quadrangle. Will be empty if not found.</param>
         /// <param name="straightQrCode">The optional output image containing rectified and binarized QR code</param>
         /// <returns></returns>
-        public string DetectAndDecode(InputArray img, out Point2f[] points, OutputArray? straightQrCode = null)
+        public string DetectAndDecode(InputArray img, out Point2f[] points, OutputArray straightQrCode = null)
         {
             if (img == null)
                 throw new ArgumentNullException(nameof(img));
@@ -124,10 +125,13 @@ namespace OpenCvSharp
 
             using var pointsVec = new VectorOfPoint2f();
             using var resultString = new StdString();
+            // Debug.Log("result test1" + resultString.ToString());
             NativeMethods.HandleException(
                 NativeMethods.objdetect_QRCodeDetector_detectAndDecode(
                 ptr, img.CvPtr, pointsVec.CvPtr, Cv2.ToPtr(straightQrCode), resultString.CvPtr));
             points = pointsVec.ToArray();
+
+            // Debug.Log("result test2" + resultString.ToString());
 
             GC.KeepAlive(img);
             GC.KeepAlive(straightQrCode);
@@ -168,7 +172,7 @@ namespace OpenCvSharp
         /// <param name="points">Quadrangle vertices found by detect() method (or some other algorithm).</param>
         /// <param name="decodedInfo">UTF8-encoded output vector of string or empty vector of string if the codes cannot be decoded. </param>
         /// <returns></returns>
-        public bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string?[] decodedInfo)
+        public bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string[] decodedInfo)
         {
             return DecodeMulti(img, points, out decodedInfo, out _, false);
         }
@@ -182,7 +186,7 @@ namespace OpenCvSharp
         /// <param name="decodedInfo">UTF8-encoded output vector of string or empty vector of string if the codes cannot be decoded. </param>
         /// <param name="straightQrCode">The optional output image containing rectified and binarized QR code</param>
         /// <returns></returns>
-        public bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string?[] decodedInfo, out Mat[] straightQrCode)
+        public bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string[] decodedInfo, out Mat[] straightQrCode)
         {
             return DecodeMulti(img, points, out decodedInfo, out straightQrCode, true);
         }
@@ -198,7 +202,7 @@ namespace OpenCvSharp
         /// <param name="straightQrCode">The optional output image containing rectified and binarized QR code</param>
         /// <param name="isOutputStraightQrCode"><see langword="true"/> to output <paramref name="straightQrCode"/></param>
         /// <returns></returns>
-        protected bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string?[] decodedInfo, out Mat[] straightQrCode, bool isOutputStraightQrCode)
+        protected bool DecodeMulti(InputArray img, IEnumerable<Point2f> points, out string[] decodedInfo, out Mat[] straightQrCode, bool isOutputStraightQrCode)
         {
             if (img == null)
                 throw new ArgumentNullException(nameof(img));

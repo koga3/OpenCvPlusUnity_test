@@ -83,8 +83,10 @@ namespace Kew
             Mat straight_qrcode = new Mat();
             // QRコード検出器
             QRCodeDetector detector = new QRCodeDetector();
+            Debug.Log("Detector initialize : " + detector);
             // QRコードの検出と復号化(デコード)
             string data = detector.DetectAndDecode(input_image, out points, straight_qrcode);
+            Debug.Log("Detector Decode : " + data);
             if (data.Count() > 0)
             {
                 // 復号化情報(文字列)の出力
@@ -96,8 +98,6 @@ namespace Kew
                     Debug.Log("points: " + points[i]);
                 }
                 Trimming(output_image, output_image, points);
-                // imwrite("output.png", output_image);
-                DisplayMat(output_image, 1);
                 // おまけでQRコードのバージョンも計算
                 // Debug.Log("QR code version: " + ((straight_qrcode.Rows - 21) / 4) + 1);
             }
@@ -107,6 +107,40 @@ namespace Kew
             }
 
             return data;
+        }
+
+        public Tuple<string, Mat> DetectQrCodeForTest(Mat input_image)
+        {
+            Mat output_image = input_image.Clone();
+            Point2f[] points;
+            Mat straight_qrcode = new Mat();
+            // QRコード検出器
+            QRCodeDetector detector = new QRCodeDetector();
+            Debug.Log("Detector initialize : " + detector);
+            // QRコードの検出と復号化(デコード)
+            // string data = detector.DetectAndDecode(input_image, out points, straight_qrcode);
+            string data = detector.DetectAndDecode(input_image, out points, straight_qrcode);
+            Debug.Log("Detector Decode : " + data);
+            if (data.Count() > 0)
+            {
+                // 復号化情報(文字列)の出力
+                // Debug.Log("decoded data: " + data);
+                // 検出結果の矩形描画
+                for (int i = 0; i < points.Length; i++)
+                {
+                    // Cv2.Rectangle(output_image, points[i], points[(i + 1) % points.Length], new Scalar(0, 0, 255));
+                    Debug.Log("points: " + points[i]);
+                }
+                Trimming(output_image, output_image, points);
+                // おまけでQRコードのバージョンも計算
+                // Debug.Log("QR code version: " + ((straight_qrcode.Rows - 21) / 4) + 1);
+            }
+            else
+            {
+                Debug.Log("QR code not detected");
+            }
+
+            return new Tuple<string, Mat>(data, output_image);
         }
 
         public Mat Threshold(Mat image)
@@ -153,7 +187,7 @@ namespace Kew
             return images.Select(x => Threshold2(x));
         }
 
-        private void Trimming(Mat src, OutputArray dst, IEnumerable<Point2f> points)
+        public void Trimming(Mat src, OutputArray dst, IEnumerable<Point2f> points)
         {
             using (Mat rotated = new Mat())
             {

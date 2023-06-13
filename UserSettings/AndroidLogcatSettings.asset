@@ -65,7 +65,7 @@
         "MemoryGroup": 2,
         "Behavior": 0
     },
-    "m_Filter": "",
+    "m_Filter": "ZXing",
     "m_FilterIsRegularExpression": false,
     "m_SymbolPaths": []
 }
