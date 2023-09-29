@@ -181,7 +181,7 @@ namespace Kew
             Cv2.Dilate(src, src, kernel, iterations: 1);
             kernel = Mat.Ones(3, 3, MatType.CV_8UC1);
             Cv2.Erode(src, src, kernel, iterations: 3);
-            DisplayMat(src, 3);
+            // DisplayMat(src, 3);
 
             Point[][] countours;
             HierarchyIndex[] i;
@@ -198,7 +198,7 @@ namespace Kew
                 Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
-            DisplayMat(src, 4);
+            // DisplayMat(src, 4);
         }
 
         // 本筋
@@ -209,7 +209,7 @@ namespace Kew
             // Cv2.Laplacian(temp, temp, MatType.CV_32FC2);
             Cv2.Laplacian(temp, temp, MatType.CV_8UC1, 3);
 
-            DisplayMat(temp, 2);
+            // DisplayMat(temp, 2);
 
             Threshold4(src);
             // DisplayMat(src, 2);
@@ -218,11 +218,11 @@ namespace Kew
             var kernel2 = Mat.Ones(5, 5, MatType.CV_8UC1);
             // // DisplayMat(src, 2);
             Cv2.Erode(src, src, kernel2, iterations: 1);
-            DisplayMat(src, 3);
+            // DisplayMat(src, 3);
             Cv2.Dilate(src, src, kernel, iterations: 3);
-            DisplayMat(src, 4);
+            // DisplayMat(src, 4);
             Cv2.Erode(src, src, kernel, iterations: 2);
-            DisplayMat(src, 5);
+            // DisplayMat(src, 5);
 
             Point[][] countours;
             {
@@ -316,7 +316,7 @@ namespace Kew
                 // Cv2.Rectangle(src, new Point(rect.X, rect.Y), new Point(rect.X + rect.Width, rect.Y + rect.Height), new Scalar(0, 0, 255));
             }
 
-            DisplayMat(src, 6);
+            // DisplayMat(src, 6);
             DisplayNums(numList);
             // retList.ForEach(x => x.Disp)
 
@@ -335,15 +335,20 @@ namespace Kew
                 }
                 if (numList.Count() >= 1)
                 {
-                    DisplayMat(numList[0], 3, 10);
+                    // DisplayMat(numList[0], 3, 10);
                 }
             }
-            List<Texture2D> numTexList = new List<Texture2D>();
-            foreach (var mat in numList)
+            // List<Texture2D> numTexList = new List<Texture2D>();
+            // foreach (var mat in numList)
+            // {
+            //     numTexList.Add(OpenCvSharp.Unity.MatToTexture(mat));
+            // }
+            IEnumerable<Tuple<int, float, float>> ret = null;
+            await UniTask.RunOnThreadPool(async () =>
             {
-                numTexList.Add(OpenCvSharp.Unity.MatToTexture(mat));
-            }
-            var ret = await RecognizeNumbers(numTexList, token);
+                ret = await RecognizeNumbers(numList, token);
+
+            }, cancellationToken: token);
             if (ret == null) return null;
             Debug.Log("Result: " + ret.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
 
@@ -865,7 +870,7 @@ namespace Kew
         }
 
         private List<List<Tuple<int, float, float>>> preventResult = new List<List<Tuple<int, float, float>>>();
-        public async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Texture2D> numberTexs, CancellationToken token)
+        public async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Mat> numberTexs, CancellationToken token)
         {
             var result = await OcrWithKnn(numberTexs, token);
             if (result.Count() <= 0)
@@ -897,15 +902,15 @@ namespace Kew
 
         private class Number
         {
-            public Color[] Pixels;
-            public int Count;
+            public Mat Mat; // 画素
+            public int Count;   // 保存されている数字画像の数
             public Number()
             {
 
             }
-            public Number(Color[] pixels, int count)
+            public Number(Mat mat, int count)
             {
-                Pixels = pixels;
+                this.Mat = mat;
                 Count = count;
             }
         }
@@ -942,9 +947,9 @@ namespace Kew
                     return null;
                 }
                 datas.Apply();
-                var pixels = datas.GetPixels();
 
-                numberData.Add(new Number(pixels, count));
+                numberData.Add(new Number(OpenCvSharp.Unity.TextureToMat(datas), count));
+                Cv2.CvtColor(numberData.Last().Mat, numberData.Last().Mat, OpenCvSharp.ColorConversionCodes.RGB2GRAY);
             }
 
             return numberData;
@@ -952,18 +957,18 @@ namespace Kew
 
         // 複数桁を同時に処理する
         private readonly int k = 10;
-        public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Texture2D> tex2dlist, CancellationToken token)
+        public async UniTask<List<Tuple<int, float, float>>> OcrWithKnn(IEnumerable<Mat> matlist, CancellationToken token)
         {
             // 判定
             var lockObject = new object();
-            List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>(Enumerable.Repeat(new Tuple<int, float, float>(0, 0, 0), tex2dlist.Count()));
+            List<Tuple<int, float, float>> result = new List<Tuple<int, float, float>>(Enumerable.Repeat(new Tuple<int, float, float>(0, 0, 0), matlist.Count()));
             // Debug.Log($"実行中のスレッド 0={Thread.CurrentThread.ManagedThreadId}");
-            var pixelsList = tex2dlist.Select(x => x.GetPixels());
+            // var pixelsList = tex2dlist.Select(x => x.GetPixels());
 
-            async UniTask CreateTask(Color[] pixels, int i)
+            async UniTask CreateTask(Mat mat, int i)
             {
                 // Debug.Log($"実行中のスレッド 1={Thread.CurrentThread.ManagedThreadId}");
-                var temp = await OcrWithKnn(pixels, this.numberData, token);
+                var temp = await OcrWithKnn(mat, this.numberData, token);
                 lock (lockObject)
                 {
                     result[i] = temp; // クリティカル
@@ -971,9 +976,9 @@ namespace Kew
             }
             var tasks = new List<UniTask>();
             int i = 0; // 何番目の数字か
-            foreach (var pixels in pixelsList)
+            foreach (var mat in matlist)
             {
-                tasks.Add(CreateTask(pixels, i));
+                tasks.Add(CreateTask(mat, i));
                 i++;
             }
 
@@ -985,8 +990,7 @@ namespace Kew
 
             return result;
         }
-
-        private async UniTask<Tuple<int, float, float>> OcrWithKnn(Color[] targetPixels, List<Number> numberData, CancellationToken token)
+        private async UniTask<Tuple<int, float, float>> OcrWithKnn(Mat target, List<Number> numberData, CancellationToken token)
         {
             List<Tuple<int, float>> nearerList = new List<Tuple<int, float>>();
             // objectをインスタンス化
@@ -995,25 +999,30 @@ namespace Kew
             async UniTask CreateTask(int num)
             {
                 // await UniTask.Delay(2000);
-                await UniTask.RunOnThreadPool(() =>
+                // Debug.Log($"実行中のスレッド 2={Thread.CurrentThread.ManagedThreadId}");
+                var number = numberData[num];
+                for (int i = 0; i < number.Count; i++)
                 {
-                    // Debug.Log($"実行中のスレッド 2={Thread.CurrentThread.ManagedThreadId}");
-                    var number = numberData[num];
-                    for (int i = 0; i < number.Count; i++)
+                    // 画像切り出し
+                    // int xBias = maxColumn * numberWidth - ((i % maxColumn) + 1) * numberWidth;
+                    // int yBias = maxColumn * numberHeight - ((i / maxColumn) + 1) * numberHeight;
+                    int xBias = ((i % maxColumn)) * numberWidth;
+                    int yBias = ((i / maxColumn)) * numberHeight;
+                    int xCenter = xBias + numberWidth / 2;
+                    int yCenter = yBias + numberHeight / 2;
+                    // var data = GetPixels(number.Pixels, xBias, yBias, numberWidth, numberHeight);
+                    var refData = number.Mat.GetRectSubPix(new Size(numberWidth, numberHeight), new Point2f(xCenter, yCenter));
+                    // Debug.Log(new Point2f(xCenter, yCenter));
+                    // DisplayMat(refData, 0);
+
+                    float similarity = (float)CaluculateCosSimilarity(refData, target);
+
+                    lock (lockObject)
                     {
-                        // 画像切り出し
-                        int xBias = maxColumn * numberWidth - ((i % maxColumn) + 1) * numberWidth;
-                        int yBias = maxColumn * numberHeight - ((i / maxColumn) + 1) * numberHeight;
-                        var data = GetPixels(number.Pixels, xBias, yBias, numberWidth, numberHeight);
-
-                        float similarity = (float)CaluculateCosSimilarity(data.Select(x => x.r).ToArray(), targetPixels.Select(x => x.r).ToArray());
-
-                        lock (lockObject)
-                        {
-                            nearerList.Add(new Tuple<int, float>(num, similarity));
-                        }
+                        nearerList.Add(new Tuple<int, float>(num, similarity));
+                        Debug.Log(nearerList.Last());
                     }
-                });
+                }
             }
 
             var tasks = new List<UniTask>();
@@ -1072,18 +1081,40 @@ namespace Kew
             return Mathf.Pow(distance, src1.Length);
         }
 
-
-        private float? CaluculateCosSimilarity(float[] src1, float[] src2)
+        private float? CaluculateCosSimilarity(Mat refData, Mat target)
         {
-            if (src1.Length != src2.Length)
+            if (refData.Width != target.Width || refData.Height != target.Height)
             {
+                Debug.LogError("Size is Incorrect!");
                 return null;
             }
+            // DisplayMat(target, 2);
+            // Debug.Log(refData + "   sasas" + target);
+            float norm1 = 0, norm2 = 0, dot = 0;
+            unsafe
+            {
+                byte* pByteRefData = refData.DataPointer;
+                byte* pByteTarget = target.DataPointer;
+                int[] refPixs = new int[refData.Rows * refData.Cols], targetPixs = new int[refData.Rows * refData.Cols];
+                for (int y = 0; y < refData.Rows; y++)
+                {
+                    for (int x = 0; x < refData.Cols; x++)
+                    {
+                        var i = y * refData.Step() + x * refData.ElemSize();
+                        float refPix = pByteRefData[0] / 255f;
+                        float targetPix = pByteTarget[0] / 255f;
+                        norm1 += refPix * refPix;
+                        norm2 += targetPix * targetPix;
+                        dot += targetPix * refPix;
 
-            var temp = src1.Zip(src2, (x, y) => new { src1 = x, src2 = y })
-                        .Select(x => new { xy = x.src1 * x.src2, x = Mathf.Pow(x.src1 * x.src1, 0.5f), y = Mathf.Pow(x.src2 * x.src2, 0.5f) });
+                        pByteRefData++;
+                        pByteTarget++;
+                    }
+                }
+            }
 
-            return temp.Sum(arr => arr.xy) / (temp.Sum(arr => arr.x) * temp.Sum(arr => arr.y));
+            // Debug.Log($"x:{norm1}, y:{norm2}, dot: {dot}");
+            return dot / Mathf.Pow(norm1 * norm2, 0.5f);
         }
         // public void OcrWithKnn(Texture2D tex2d)
         // {
