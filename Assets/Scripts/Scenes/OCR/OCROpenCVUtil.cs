@@ -102,25 +102,26 @@ namespace Kew
                 {
                     using (Mat temp = new Mat())
                     {
-                        float scale = (float)image.Width / (float)displaySize.Width;
+                        float normalization = (float)displaySize.Width / (float)image.Width;
+                        var normarized = image.Resize(Size.Zero, normalization, normalization, InterpolationFlags.Cubic);
                         // Make template's size match with image's size 
-                        Mat[] scaledTemplates = objectMats.Select(mat => mat.Resize(Size.Zero, scale, scale, InterpolationFlags.Cubic)).ToArray();
-                        List<OpenCvSharp.Rect> scaledJugdeAreas = judgeAreas.Select(rect => new OpenCvSharp.Rect((int)(rect.X * scale), (int)(rect.Y * scale), (int)(rect.Width * scale), (int)(rect.Height * scale))).ToList();
-                        tempMat[1] = scaledTemplates[0];
+                        // Mat[] scaledTemplates = objectMats.Select(mat => mat.Resize(Size.Zero, scale, scale, InterpolationFlags.Cubic)).ToArray();
+                        // List<OpenCvSharp.Rect> scaledJugdeAreas = judgeAreas.Select(rect => new OpenCvSharp.Rect((int)(rect.X * scale), (int)(rect.Y * scale), (int)(rect.Width * scale), (int)(rect.Height * scale))).ToList();
+                        tempMat[1] = objectMats[0];
                         // Debug.Log(objectMats[0].Width);
 
-                        image.CopyTo(temp);
+                        normarized.CopyTo(temp);
                         matList.ToList()[i] = Threshold2(temp);
-                        if (temp.Width <= scaledTemplates.Max(x => x.Width) || temp.Height <= scaledTemplates.Max(x => x.Height))
+                        if (temp.Width <= objectMats.Max(x => x.Width) || temp.Height <= objectMats.Max(x => x.Height))
                         {
                             i++;
                             continue;
                         }
                         // Debug.Log($"src={temp.Size()}, template={objectMats.Max(x => x.Width)}, {objectMats.Max(x => x.Height)}");
-                        var points = GetPointByTemplateMatching(temp, scaledTemplates).ToList();
+                        var points = GetPointByTemplateMatching(temp, objectMats).ToList();
                         // if (points[0].X != -1) Debug.Log($"scaledJugdeArea : {scaledJugdeAreas[0]}, {scaledJugdeAreas[1]} Foot : {points[0]} {scaledJugdeAreas[0].Contains(points[0])}, Circle : {points[1]} {scaledJugdeAreas[1].Contains(points[1])}");
 
-                        var matchCnt = scaledJugdeAreas
+                        var matchCnt = judgeAreas
                             .Select((x, i) => new { area = x, i = i })
                             .Count(x => x.area.Contains(points[x.i]));
 
@@ -129,7 +130,7 @@ namespace Kew
                             if (matchCnt > maxCount)
                             {
                                 maxCount = matchCnt;
-                                retval = image.GetRectSubPix(new Size(90 * scale, 45 * scale), new Point2f(image.Width * 0.5f - 66 * scale, image.Height * 0.5f + 41 * scale));
+                                retval = normarized.GetRectSubPix(new Size(90, 45), new Point2f(image.Width * 0.5f - 66, image.Height * 0.5f + 41));
                                 Cv2.Resize(retval, retval, new Size(120, 60), interpolation: InterpolationFlags.Lanczos4); // 縦を60に合わせる
                                 // Debug.Log("laplacian" + m.At<float>(0, 0));
                                 // Debug.Log("laplacian" + m.Reduce(ReduceDimension.Row, ReduceTypes.Sum, -1).Reduce(ReduceDimension.Column, ReduceTypes.Sum, -1).At<float>(0, 0));
@@ -154,8 +155,8 @@ namespace Kew
                         i++;
 
                         // test
-                        Cv2.Rectangle(test, scaledJugdeAreas[0], new Scalar(0, 0, 255));
-                        Cv2.Rectangle(test, scaledJugdeAreas[1], new Scalar(0, 0, 122));
+                        Cv2.Rectangle(test, judgeAreas[0], new Scalar(0, 0, 255));
+                        Cv2.Rectangle(test, judgeAreas[1], new Scalar(0, 0, 122));
                         Cv2.Rectangle(test, points[0], new Point(points[0].X + 1, points[0].Y + 1), new Scalar(0, 0, 255));
                         Cv2.Rectangle(test, points[1], new Point(points[1].X + 1, points[1].Y + 1), new Scalar(0, 0, 122));
                     }
@@ -870,7 +871,7 @@ namespace Kew
         }
 
         private List<List<Tuple<int, float, float>>> preventResult = new List<List<Tuple<int, float, float>>>();
-        public async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Mat> numberTexs, CancellationToken token)
+        public virtual async UniTask<IEnumerable<Tuple<int, float, float>>> RecognizeNumbers(IEnumerable<Mat> numberTexs, CancellationToken token)
         {
             var result = await OcrWithKnn(numberTexs, token);
             if (result.Count() <= 0)
@@ -879,19 +880,19 @@ namespace Kew
                 return null;
             }
 
-            if (result.Min(x => x.Item2) >= 0.8f && result.Max(x => x.Item3) < 0.0018)
+            if (result.Min(x => x.Item2) >= 0.9f && result.Min(x => x.Item3) > 0.95)
             {
                 preventResult.Clear();
                 return result;
             }
-            else if (preventResult.Count() >= 2 && preventResult.Count(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) >= 2)//&& result.Max(x => x.Item3) < 0.0019)
+            else if (preventResult.Count() >= 2 && preventResult.Count(x => x.Select(y => y.Item1).SequenceEqual(result.Select(y => y.Item1))) >= 2 && result.Max(x => x.Item3) > 0.85)
             {
                 preventResult.Clear();
                 return result;
             }
             else
             {
-                Debug.Log("Discard Result : " + result.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
+                Debug.Log("Discard Result: " + result.Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y));
                 preventResult.Add(result);
                 if (preventResult.Count() > 3) preventResult = preventResult.GetRange(preventResult.Count() - 3, 3);
                 Debug.Log("preventResult: " + preventResult.Count());
