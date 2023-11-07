@@ -23,7 +23,7 @@ namespace Kew
 
         //-----------------------------------------------------------------------------------------------------------------------------------
         // 数字判定用画像の保存用
-        List<Number> numberData;
+        protected List<Number> numberData;
 
         // 画像処理
         // 足、マルを判定する範囲
@@ -39,8 +39,8 @@ namespace Kew
             };
 
         // 出力する数字画像の大きさ
-        private readonly int numberWidth = 32;
-        private readonly int numberHeight = 32;
+        protected readonly int numberWidth = 32;
+        protected readonly int numberHeight = 32;
         // 画面の縦横size
         private readonly OpenCvSharp.Size displaySize = new OpenCvSharp.Size(300, 312);
         // 画面を検出する際の最小サイズ
@@ -702,8 +702,8 @@ namespace Kew
         // 保存処理
 
         // 保存する数字の最大文字数
-        private readonly int maxColumn = 10;
-        private readonly int maxRaw = 10;
+        protected readonly int maxColumn = 10;
+        protected readonly int maxRaw = 10;
 
         // 保存する数字画像の大きさ
         private Size numberDataSize => new Size(numberWidth * maxColumn, numberHeight * maxRaw);
@@ -901,7 +901,7 @@ namespace Kew
             // }
         }
 
-        private class Number
+        protected class Number
         {
             public Mat Mat; // 画素
             public int Count;   // 保存されている数字画像の数
